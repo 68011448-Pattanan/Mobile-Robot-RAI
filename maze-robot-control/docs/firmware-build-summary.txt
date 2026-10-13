@@ -1,0 +1,3 @@
+Arduino AVR core1.8.6; Uno; MCP3008 1.3.3; BusIO1.17.4; MAZE_V3
+Sketch uses 21594 bytes (66%) of program storage space. Maximum is 32256 bytes.
+Global variables use 1100 bytes (53%) of dynamic memory, leaving 948 bytes for local variables. Maximum is 2048 bytes.

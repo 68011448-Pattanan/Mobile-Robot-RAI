@@ -1,0 +1,1800 @@
+You are a **senior robotics software engineer, embedded Arduino developer, simulation engineer, and full-stack web developer**.
+
+I have provided an existing Arduino file named **`maze.ino`** for a line-following maze robot.
+
+Your task is to **analyze the existing Arduino code first**, understand exactly how the robot currently works, and then create a complete **web-based Robot Control, Simulation, Monitoring, and LSRB Maze Learning Platform** around it.
+
+The final system must have two major modes:
+
+1. **Simulation Mode**
+2. **Real Robot Mode**
+
+The application should function as both:
+
+- a **digital twin / simulator** of the physical maze robot, and
+- a **real-time control and monitoring dashboard** for the actual Arduino robot connected through an **HC-05 Bluetooth module**.
+
+Do not merely create a visual mockup. The simulation, algorithms, serial protocol, Arduino firmware, path transfer, PID tuning, and real-robot communication must actually work.
+
+---
+
+# 1. FIRST: ANALYZE THE EXISTING `maze.ino`
+
+Before changing anything, inspect the supplied Arduino code and document its current architecture.
+
+The existing robot includes approximately the following functionality, but verify all details directly from the source code rather than blindly trusting this description.
+
+### Hardware / firmware currently represented
+
+- Arduino-based controller
+- `Adafruit_MCP3008`
+- MCP3008 8-channel ADC
+- 8 line sensors
+- Two DC motors
+- Differential drive
+- Motor PWM and direction control
+- Maze-junction detection
+- Line-position calculation
+- PD/PID-style line following
+- Maze exploration
+- Path recording
+- Path simplification
+- Shortest-path replay
+
+Current important concepts include:
+
+```text
+Sensor channels:
+0 1 2 3 4 5 6 7
+```
+
+Current path symbols:
+
+```text
+L = Left
+F = Forward / Straight
+R = Right
+B = Back / U-turn
+```
+
+The current code stores the exploration path in:
+
+```cpp
+char path[MAX_PATH];
+```
+
+and the optimized path in:
+
+```cpp
+char shortest_path[MAX_PATH];
+```
+
+The current code also includes logic similar to:
+
+```text
+L B L -> F
+L B F -> R
+L B R -> B
+
+F B L -> R
+F B F -> B
+F B R -> L
+
+R B L -> B
+R B F -> L
+R B R -> F
+```
+
+Verify whether these transformations are correct mathematically for the intended maze-solving convention and explain them inside the web application's educational view.
+
+Current line following uses variables including:
+
+```text
+BaseSpeed
+Kp
+Kd
+Error
+LastError
+LeftMotor
+RightMotor
+Position
+```
+
+The existing implementation appears primarily to use proportional and derivative correction. Clearly distinguish between **P, PI, PD, and PID**, and do not misleadingly call the existing algorithm full PID if `Ki` is not actually being used.
+
+---
+
+# 2. OVERALL APPLICATION GOAL
+
+Create a polished web application called something similar to:
+
+**Maze Robot Digital Twin & Control Center**
+
+It should allow a student to understand, simulate, tune, debug, teach, and operate the robot from one interface.
+
+The system should visualize the complete pipeline:
+
+```text
+Maze
+  ↓
+8 IR sensors
+  ↓
+MCP3008
+  ↓
+Sensor normalization
+  ↓
+Line position
+  ↓
+Error
+  ↓
+PD/PID controller
+  ↓
+Left/Right motor commands
+  ↓
+Robot movement
+  ↓
+Intersection detection
+  ↓
+LSRB decision
+  ↓
+Path recording
+  ↓
+Path optimization
+  ↓
+Shortest-path replay
+```
+
+The application must make this pipeline visible interactively.
+
+---
+
+# 3. REQUIRED TECH STACK
+
+Use a modern maintainable architecture.
+
+Preferred stack:
+
+### Frontend
+
+- Next.js
+- TypeScript
+- React
+- Tailwind CSS
+- shadcn/ui
+- Recharts, Plotly, or another appropriate plotting library
+- Canvas/SVG/WebGL for robot/maze simulation
+
+### Backend
+
+Prefer:
+
+- FastAPI
+- Python
+- WebSocket
+- PySerial
+- Pydantic
+
+The backend should handle:
+
+- robot communication
+- serial parsing
+- telemetry
+- path files
+- command routing
+- WebSocket streaming
+- simulation API when appropriate
+
+### Deployment
+
+Provide:
+
+```text
+docker-compose.yml
+```
+
+not:
+
+```text
+docker-compose.ymal
+```
+
+unless there is a specific reason otherwise.
+
+The web application and backend should run using:
+
+```bash
+docker compose up --build
+```
+
+---
+
+# 4. WINDOWS + HC-05 + DOCKER CONSIDERATION
+
+The primary development environment is **Windows**.
+
+An HC-05 paired with Windows normally appears as a Bluetooth Serial Port such as:
+
+```text
+COM5
+COM6
+COM7
+etc.
+```
+
+Do NOT assume Docker Desktop can transparently access a Windows COM device.
+
+Design a reliable architecture.
+
+Recommended architecture:
+
+```text
+Arduino Robot
+      ↕
+HC-05 Bluetooth
+      ↕
+Windows COM Port
+      ↕
+Python Serial Bridge running on Windows host
+      ↕
+WebSocket / TCP
+      ↕
+Docker Backend
+      ↕
+Web Frontend
+```
+
+Provide a small host-side program such as:
+
+```text
+serial_bridge.py
+```
+
+that uses PySerial and connects the HC-05 COM port to the Dockerized application.
+
+If native serial access from Docker is supported on another OS, support it as an optional alternative.
+
+The README must clearly explain both approaches.
+
+---
+
+# 5. SIMULATION MODE
+
+Simulation Mode should behave like a realistic digital twin rather than an animation.
+
+The user must be able to construct or select a maze and watch the robot solve it.
+
+Provide at least:
+
+### Maze Simulator
+
+Allow:
+
+- predefined mazes
+- editable maze
+- start position
+- finish position
+- intersections
+- dead ends
+- curves
+- straight segments
+
+Preferably include a simple maze editor.
+
+Represent the robot graphically with:
+
+- chassis
+- left wheel
+- right wheel
+- 8 IR sensors
+- sensor field of view
+- robot heading
+- robot trail
+
+---
+
+# 6. SENSOR SIMULATION
+
+Simulate all eight line sensors.
+
+For every sensor display:
+
+```text
+Raw ADC
+Normalized value
+Black/white detection
+Position under robot
+Threshold
+```
+
+Represent the sensor array visually:
+
+```text
+S0 S1 S2 S3 S4 S5 S6 S7
+```
+
+Show sensor values in real time.
+
+Example:
+
+```text
+S0  120
+S1  180
+S2  760
+S3  920
+S4  890
+S5  610
+S6  130
+S7  90
+```
+
+Color/highlight sensors according to whether they currently detect the line.
+
+Allow simulation of:
+
+- sensor noise
+- calibration differences
+- threshold changes
+- Min values
+- Max values
+- line loss
+
+---
+
+# 7. SENSOR CALIBRATION PAGE
+
+The existing firmware contains arrays similar to:
+
+```cpp
+Max[8]
+Min[8]
+```
+
+Provide an interactive calibration tool.
+
+Show:
+
+```text
+Sensor
+Minimum
+Maximum
+Current raw value
+Normalized value
+Threshold
+```
+
+Allow the student to understand the mapping:
+
+```text
+raw sensor
+      ↓
+Min / Max calibration
+      ↓
+0–1000 normalized value
+```
+
+If communicating with the actual robot, allow calibration values to be read/written when technically appropriate.
+
+---
+
+# 8. LINE POSITION VISUALIZATION
+
+Reproduce the behavior of the existing `ReadLine()` function.
+
+Show how weighted sensor values generate the estimated line position.
+
+The current expected position range is approximately:
+
+```text
+0 --------------------------- 7000
+               ^
+             3500
+```
+
+Show:
+
+```text
+Current Position
+Target Position = 3500
+Error = Position - 3500
+```
+
+Visualize the robot's calculated location relative to the line.
+
+---
+
+# 9. PID / PD TUNING LAB
+
+Create a dedicated interactive tuning page.
+
+Controls should include:
+
+```text
+Base Speed
+Kp
+Ki
+Kd
+```
+
+Even though the current firmware may only use Kp and Kd, the simulator should optionally support full PID for educational comparison.
+
+Provide modes:
+
+```text
+P
+PI
+PD
+PID
+```
+
+Show real-time graphs for:
+
+- line position
+- target position
+- error
+- proportional term
+- integral term
+- derivative term
+- total controller output
+- left motor command
+- right motor command
+
+For example:
+
+```text
+P = Kp × Error
+I = Ki × integral(Error)
+D = Kd × (Error - PreviousError)
+
+Correction = P + I + D
+```
+
+Show these values numerically and graphically.
+
+Allow:
+
+- pause
+- reset
+- step simulation
+- increase simulation speed
+- decrease simulation speed
+
+Include presets such as:
+
+```text
+Too little Kp
+Too much Kp
+Too much Kd
+Good tuning
+Oscillating robot
+Slow response
+```
+
+---
+
+# 10. LSRB / MAZE EXPLORATION SIMULATION
+
+Implement the maze-solving logic represented by the existing robot.
+
+Show when the robot recognizes:
+
+- left path
+- straight path
+- right path
+- dead end
+- finish
+
+At every junction display something similar to:
+
+```text
+Intersection #4
+
+Available:
+Left: YES
+Straight: YES
+Right: NO
+
+Selected:
+LEFT
+
+Reason:
+Left-hand rule priority
+```
+
+If the supplied firmware actually implements a slightly different decision rule, reproduce the real code and explicitly explain the difference.
+
+---
+
+# 11. SCAN / LEARNING RUN
+
+Provide a button:
+
+**Start Learning Run**
+
+During this run:
+
+1. Robot follows the line.
+2. Robot identifies each intersection.
+3. LSRB decision logic chooses a direction.
+4. Every decision is recorded.
+5. Raw path is updated live.
+
+Example:
+
+```text
+L
+L
+F
+B
+L
+R
+B
+R
+F
+```
+
+Display:
+
+```text
+Raw Path
+```
+
+in real time.
+
+Also visualize the robot's location on the maze.
+
+---
+
+# 12. PATH OPTIMIZATION VISUALIZATION
+
+This is a major educational feature.
+
+Show both:
+
+```text
+Raw Path
+Optimized Path
+```
+
+Example:
+
+```text
+Raw:
+L L F B L R B R
+
+            ↓
+
+Optimization:
+F B L -> R
+
+            ↓
+
+Result:
+L L R R B R
+```
+
+Animate each simplification rule.
+
+Create a table containing:
+
+```text
+Original sequence
+Replacement
+Reason / turn-angle interpretation
+```
+
+Explain why each simplification produces an equivalent route.
+
+Do not hide the algorithm inside the backend.
+
+The student should visually understand how the shortest path is generated.
+
+---
+
+# 13. SHORTEST-PATH / REAL RUN
+
+Provide:
+
+**Run Optimized Path**
+
+The robot should follow the optimized path without needing to re-explore the maze.
+
+Show:
+
+```text
+Current instruction
+Instruction index
+Previous instruction
+Next instruction
+Remaining path
+```
+
+Example:
+
+```text
+Current: R
+Index: 4 / 9
+Remaining: F L R F B
+```
+
+Support this in both simulation and actual-robot mode.
+
+---
+
+# 14. SERIAL MONITOR
+
+Build a full serial-monitor interface.
+
+It should support:
+
+- timestamped RX
+- timestamped TX
+- pause scrolling
+- clear
+- save log
+- filtering
+- auto-scroll
+- command input
+- baud-rate display
+- connection state
+
+Example:
+
+```text
+20:11:42.231 RX SENSOR,132,205,702,911,872,611,170,101
+20:11:42.249 RX PID,3485,-15,-0.15,-0.04,30,30
+20:11:42.328 RX EVENT,JUNCTION,LEFT
+20:11:42.329 RX PATH,L,L,F,B,L
+20:11:43.102 TX GET_STATUS
+```
+
+---
+
+# 15. DESIGN A PROPER ROBOT SERIAL PROTOCOL
+
+Do not depend on random `Serial.print()` messages.
+
+Create a clearly documented communication protocol between Arduino and computer.
+
+A newline-delimited text protocol is acceptable.
+
+For example:
+
+```text
+STATUS,SCAN
+SENSOR,120,150,700,900,880,650,140,100
+LINE,3512
+PID,12,0.12,0.04,31,29
+EVENT,JUNCTION,L
+PATH_RAW,LLFBL
+PATH_SHORT,LFR
+BATTERY,7.42
+```
+
+Commands from the computer could include:
+
+```text
+PING
+GET_STATUS
+GET_SENSORS
+GET_PATH
+GET_SHORT_PATH
+START_SCAN
+START_RUN
+STOP
+SET_PID,0.01,0.00,0.08
+SET_SPEED,30
+UPLOAD_PATH,LFRFL
+CLEAR_PATH
+SAVE_PATH
+```
+
+Design the final protocol yourself based on reliability and maintainability.
+
+Document every packet and command.
+
+---
+
+# 16. CREATE A NEW ARDUINO FIRMWARE
+
+Do NOT modify the original file destructively.
+
+Keep:
+
+```text
+maze.ino
+```
+
+as reference.
+
+Create something similar to:
+
+```text
+maze_hc05.ino
+```
+
+or:
+
+```text
+maze_v2.ino
+```
+
+The new version must preserve the original robot behavior while adding robust computer communication.
+
+---
+
+# 17. HC-05 BLUETOOTH SUPPORT
+
+Add HC-05 Bluetooth serial communication.
+
+Because Arduino Uno has only one hardware UART, carefully decide whether to use:
+
+```cpp
+SoftwareSerial
+```
+
+or another appropriate arrangement.
+
+Avoid creating pin conflicts with existing hardware.
+
+Existing motor-related pins in the source code must be checked before assigning HC-05 pins.
+
+Also verify the existing use of pin 8 and configure it correctly if it is being used as a start button or digital input.
+
+Document the recommended wiring:
+
+```text
+HC-05 VCC
+HC-05 GND
+HC-05 TXD
+HC-05 RXD
+Arduino pins
+```
+
+Remember that the HC-05 RX input may require appropriate voltage-level consideration when connected to a 5 V Arduino TX signal.
+
+Include a wiring diagram or clear connection table.
+
+---
+
+# 18. FIRMWARE STATE MACHINE
+
+Refactor the firmware into a clean state-machine architecture.
+
+Suggested states:
+
+```text
+IDLE
+CALIBRATION
+MANUAL
+SCAN
+PATH_READY
+RUN_PATH
+PAUSED
+STOPPED
+ERROR
+```
+
+Avoid locking the entire microcontroller inside unnecessary blocking `while(true)` loops wherever practical.
+
+Communication should remain responsive even while the robot is moving.
+
+Use `millis()`-based control where possible instead of excessive blocking delays.
+
+---
+
+# 19. REAL-TIME TELEMETRY
+
+The new firmware must continuously send useful telemetry.
+
+At minimum:
+
+```text
+Robot mode
+Sensor 0–7
+Normalized sensor values
+Line position
+Error
+Kp
+Ki
+Kd
+Controller correction
+Left motor output
+Right motor output
+Raw path
+Optimized path
+Current path index
+Last detected intersection
+Connection status
+Runtime
+```
+
+Avoid transmitting so quickly that the Arduino or HC-05 becomes overloaded.
+
+Use a sensible configurable telemetry frequency such as:
+
+```text
+5 Hz
+10 Hz
+20 Hz
+```
+
+---
+
+# 20. REAL ROBOT DASHBOARD
+
+Real Robot Mode should contain cards for:
+
+### Connection
+
+```text
+Disconnected / Connected
+COM port
+Baud rate
+Latency
+Packets received
+Last packet
+```
+
+### Robot
+
+```text
+IDLE
+SCANNING
+RUNNING
+STOPPED
+ERROR
+```
+
+### Sensors
+
+Eight real-time sensor indicators.
+
+### Controller
+
+```text
+Position
+Error
+Kp
+Ki
+Kd
+Correction
+Left PWM
+Right PWM
+```
+
+### Path
+
+```text
+Raw Path
+Optimized Path
+Current Step
+```
+
+### Events
+
+```text
+Line detected
+Intersection detected
+Left turn
+Right turn
+Dead end
+U-turn
+Finish detected
+```
+
+---
+
+# 21. SAFETY CONTROLS
+
+Provide a highly visible:
+
+**EMERGENCY STOP**
+
+It should immediately send a stop command.
+
+Also provide:
+
+```text
+Pause
+Resume
+Reset
+Disconnect
+```
+
+If communication is lost, design a firmware timeout so the robot can enter a safe state where appropriate.
+
+---
+
+# 22. PATH DOWNLOAD FROM ROBOT
+
+During the learning run, the robot must send its path to the computer.
+
+The backend must be able to automatically save it as a `.txt` file.
+
+Example:
+
+```text
+paths/
+    maze_2026-10-04_20-30-12_raw.txt
+    maze_2026-10-04_20-30-12_shortest.txt
+```
+
+Example file:
+
+```text
+LFRLFR
+```
+
+Optionally include metadata:
+
+```text
+# Maze Robot Path
+# Created: 2026-10-04 20:30:12
+# Type: shortest
+# Length: 6
+
+LFRLFR
+```
+
+Support:
+
+**Download Path**
+
+from the web UI.
+
+---
+
+# 23. PATH UPLOAD TO ROBOT
+
+The web application must allow the user to upload:
+
+```text
+.txt
+```
+
+containing a path.
+
+For example:
+
+```text
+LFRRFL
+```
+
+Validate the path.
+
+Only permit valid commands such as:
+
+```text
+L
+F
+R
+B
+```
+
+Then allow:
+
+**Upload to Robot**
+
+Flow:
+
+```text
+TXT file
+    ↓
+Backend validates
+    ↓
+Send through serial/Bluetooth
+    ↓
+Arduino stores path
+    ↓
+Arduino sends ACK
+    ↓
+Web UI verifies uploaded path
+```
+
+Do not simply assume the transfer worked.
+
+Implement acknowledgement, validation, timeout, and retry behavior.
+
+---
+
+# 24. PATH EDITOR
+
+Provide a visual path editor.
+
+Example:
+
+```text
+[L] [F] [R] [F] [L] [B]
+```
+
+Features:
+
+- insert
+- remove
+- reorder
+- clear
+- optimize
+- save
+- download
+- upload to robot
+- run in simulator
+- run on real robot
+
+---
+
+# 25. MANUAL CONTROL
+
+Provide an optional manual-drive mode.
+
+Controls:
+
+```text
+Forward
+Backward
+Left
+Right
+Stop
+```
+
+Keyboard support can include:
+
+```text
+W = Forward
+S = Backward
+A = Left
+D = Right
+Space = Stop
+```
+
+Manual control must clearly be separated from automatic maze-solving mode.
+
+---
+
+# 26. EDUCATIONAL "HOW IT WORKS" MODE
+
+Create a detailed interactive explanation of the robot.
+
+Allow selecting a component:
+
+```text
+IR sensor
+MCP3008
+Arduino
+Motor driver
+Left motor
+Right motor
+HC-05
+PID controller
+LSRB algorithm
+Path optimizer
+```
+
+When selected, explain:
+
+```text
+What it does
+Input
+Output
+Why it is needed
+Relevant Arduino function
+Where its data appears in the dashboard
+```
+
+For example:
+
+```text
+ReadLine()
+      ↓
+Calculates weighted line position
+      ↓
+Target = 3500
+      ↓
+PID/PD error
+```
+
+---
+
+# 27. CODE EXPLORER
+
+Provide an educational view mapping major firmware functions to robot behavior.
+
+Include functions from the supplied code such as:
+
+```text
+TrackMaze()
+RunShortestPath()
+CalculateShortestPath()
+AddPath()
+Read()
+ReadLine()
+Pid()
+PidTime()
+Motors()
+Move()
+FF()
+LL()
+RR()
+Uturn()
+```
+
+For each function show:
+
+- purpose
+- inputs
+- outputs
+- which hardware it controls
+- where it fits in the algorithm
+- simulation equivalent
+
+---
+
+# 28. DEBUGGING PANEL
+
+Create a developer/debug mode.
+
+Show:
+
+```text
+Raw serial packet
+Parsed packet
+Current firmware state
+Last command
+Last ACK
+Communication errors
+Dropped packets
+Simulation timestep
+Sensor values
+Path memory usage
+```
+
+Provide buttons such as:
+
+```text
+Request Status
+Request Path
+Request Sensors
+Ping Robot
+```
+
+---
+
+# 29. SIMULATION VS REAL MODE CONSISTENCY
+
+The same logical data model should power both modes.
+
+For example:
+
+```typescript
+RobotState {
+    mode
+    sensors
+    position
+    error
+    kp
+    ki
+    kd
+    motorLeft
+    motorRight
+    rawPath
+    optimizedPath
+    pathIndex
+}
+```
+
+Simulation should produce this state from a virtual robot.
+
+Real mode should produce the same state from Arduino telemetry.
+
+Therefore UI components should not have to know whether the data originated from:
+
+```text
+Simulator
+```
+
+or:
+
+```text
+Physical Arduino
+```
+
+This is important for maintainability.
+
+---
+
+# 30. RECORD AND REPLAY
+
+Allow a real robot session to be recorded.
+
+Store:
+
+```text
+timestamp
+sensor values
+line position
+PID error
+motor speeds
+robot state
+intersection events
+path events
+commands
+```
+
+The user should then be able to replay the session inside the web application.
+
+This will help debug failures after a physical run.
+
+---
+
+# 31. DATA EXPORT
+
+Support exporting a run as:
+
+```text
+CSV
+JSON
+TXT path file
+```
+
+CSV should be useful for further analysis in Python or Excel.
+
+Example columns:
+
+```text
+timestamp
+mode
+sensor_0
+sensor_1
+sensor_2
+sensor_3
+sensor_4
+sensor_5
+sensor_6
+sensor_7
+position
+error
+kp
+ki
+kd
+controller_output
+left_motor
+right_motor
+path_index
+event
+```
+
+---
+
+# 32. PROJECT STRUCTURE
+
+Use a clean project structure such as:
+
+```text
+maze-robot-control/
+│
+├── frontend/
+│   ├── app/
+│   ├── components/
+│   ├── simulation/
+│   ├── hooks/
+│   └── lib/
+│
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── serial/
+│   │   ├── simulation/
+│   │   ├── models/
+│   │   └── services/
+│   └── requirements.txt
+│
+├── firmware/
+│   ├── original/
+│   │   └── maze.ino
+│   └── maze_hc05/
+│       └── maze_hc05.ino
+│
+├── serial-bridge/
+│   ├── serial_bridge.py
+│   ├── requirements.txt
+│   └── start_windows.bat
+│
+├── paths/
+├── recordings/
+├── docs/
+│
+├── docker-compose.yml
+├── .env.example
+└── README.md
+```
+
+You may improve this structure if there is a technically better approach.
+
+---
+
+# 33. DOCKER
+
+The final application must contain working Docker configuration.
+
+At minimum:
+
+```text
+frontend
+backend
+```
+
+Example expected command:
+
+```bash
+docker compose up --build
+```
+
+The README should explain:
+
+```text
+http://localhost:3000
+```
+
+for the frontend and an appropriate backend URL.
+
+Include health checks where useful.
+
+Do not hard-code secrets.
+
+---
+
+# 34. STARTUP EXPERIENCE
+
+A new user should be able to clone/unzip the project and follow a short process.
+
+Example:
+
+```bash
+docker compose up --build
+```
+
+Then, for Windows real-robot mode:
+
+```bash
+cd serial-bridge
+pip install -r requirements.txt
+python serial_bridge.py --port COM5 --baud 9600
+```
+
+Then visit:
+
+```text
+http://localhost:3000
+```
+
+The web UI should detect the bridge/backend and show:
+
+```text
+Robot bridge connected
+Arduino connected
+```
+
+---
+
+# 35. DOCUMENTATION
+
+Create a high-quality README covering:
+
+1. What the project does
+2. Architecture
+3. Existing robot algorithm
+4. Simulation architecture
+5. Arduino firmware
+6. HC-05 wiring
+7. Bluetooth pairing on Windows
+8. Finding the correct COM port
+9. Starting the host serial bridge
+10. Starting Docker
+11. Connecting the robot
+12. Learning/scanning a maze
+13. Saving a path
+14. Uploading a path
+15. Running a shortest path
+16. PID tuning
+17. Troubleshooting
+18. Serial protocol
+19. Firmware flashing
+20. Safety notes
+
+---
+
+# 36. TESTING
+
+Include tests for the important logic.
+
+At minimum test:
+
+### Path optimizer
+
+Every rule such as:
+
+```text
+L B L
+L B F
+L B R
+F B L
+...
+```
+
+### Serial parser
+
+Test valid and malformed packets.
+
+### Path validation
+
+Reject:
+
+```text
+LXRF
+1234
+LEFT-RIGHT
+```
+
+unless explicitly converted through a supported importer.
+
+### Simulator
+
+Test intersection decisions and line-position calculations.
+
+### API
+
+Test path upload/download and robot commands.
+
+---
+
+# 37. IMPORTANT CODE REVIEW OF THE ORIGINAL FIRMWARE
+
+While building the new firmware, inspect the supplied source for possible bugs or design weaknesses.
+
+Examples to investigate include:
+
+- pin modes
+- start-button behavior
+- possible blocking loops
+- excessive `delay()`
+- sensor thresholds
+- ADC calibration
+- motor stopping behavior
+- array overflow
+- path overflow
+- shortest-path correctness
+- repeated calls to sensor-reading functions
+- loss-of-line behavior
+- serial responsiveness
+- HC-05 pin conflicts
+- `SoftwareSerial` timing limitations
+- PWM interactions
+- incorrect assumptions about PID terminology
+
+Do not silently change behavior.
+
+Document each significant modification as:
+
+```text
+Original behavior
+Problem
+Modification
+Reason
+Effect
+```
+
+---
+
+# 38. UI / UX EXPECTATIONS
+
+The UI should look like a professional robotics engineering dashboard.
+
+Suggested navigation:
+
+```text
+Overview
+Simulation
+Maze Solver
+PID Lab
+Path Analyzer
+Real Robot
+Serial Monitor
+Recordings
+How It Works
+Firmware
+Settings
+```
+
+Use responsive layouts.
+
+The most important information should be visible without clutter.
+
+Prefer visualizations over giant blocks of raw numbers.
+
+---
+
+# 39. SIMULATION CONTROLS
+
+Include:
+
+```text
+Start
+Pause
+Resume
+Stop
+Reset
+Step
+0.25×
+0.5×
+1×
+2×
+4×
+```
+
+Also allow switching:
+
+```text
+Learning Run
+Optimized Run
+Manual
+```
+
+---
+
+# 40. ROBOT VISUALIZATION
+
+The simulation should display:
+
+- robot position
+- robot orientation
+- sensor positions
+- line
+- wheel motion
+- travelled path
+- intersections
+- current target
+- direction decision
+
+Preferably show the eight sensor rays/footprints under the robot.
+
+When the robot turns, visually show the left/right wheel speeds producing the rotation.
+
+---
+
+# 41. ALGORITHM TIMELINE
+
+Add a timeline such as:
+
+```text
+00:00.00 Start
+00:01.32 Junction detected
+00:01.34 Decision LEFT
+00:01.35 Path += L
+00:03.21 Dead end
+00:03.22 Path += B
+00:05.80 Junction detected
+...
+00:22.15 Finish detected
+00:22.16 Optimize path
+```
+
+This should work in simulation and real mode.
+
+---
+
+# 42. CONNECTION ROBUSTNESS
+
+The system must survive:
+
+- HC-05 disconnect
+- incorrect COM port
+- Arduino reset
+- malformed serial packet
+- incomplete path upload
+- lost ACK
+- web-page refresh
+- backend restart
+
+The UI should show meaningful errors instead of crashing.
+
+---
+
+# 43. PATH TRANSFER PROTOCOL
+
+For large path uploads, design a more robust protocol than blindly sending a string.
+
+For example:
+
+```text
+PATH_BEGIN,12
+PATH_CHUNK,LFRLFRRBFLRR
+PATH_END
+```
+
+Robot response:
+
+```text
+ACK,PATH_BEGIN
+ACK,PATH_CHUNK
+ACK,PATH_END
+PATH_STORED,12
+```
+
+A checksum or CRC is optional but encouraged.
+
+For example:
+
+```text
+PATH_END,CRC32
+```
+
+The firmware should validate the path before running it.
+
+---
+
+# 44. COMMAND SAFETY
+
+Commands that start physical motion must not be triggered accidentally.
+
+The UI should distinguish:
+
+```text
+SIMULATION
+```
+
+from:
+
+```text
+REAL ROBOT
+```
+
+very clearly.
+
+A button that runs a simulation must never unexpectedly command the physical robot.
+
+Require the real robot to be connected and in an appropriate state before enabling:
+
+```text
+START REAL RUN
+```
+
+---
+
+# 45. DELIVERABLES
+
+The final output must include a complete working project.
+
+Provide:
+
+```text
+maze-robot-control.zip
+```
+
+containing:
+
+```text
+Full frontend source
+Full backend source
+Original maze.ino
+New HC-05 Arduino firmware
+Host serial bridge
+Simulation engine
+Maze examples
+PID tuning tools
+Path saving/loading
+Serial monitor
+Real-time dashboard
+Tests
+docker-compose.yml
+.env.example
+README.md
+Documentation
+```
+
+Do not provide only snippets.
+
+Do not leave essential functionality as TODO placeholders.
+
+---
+
+# 46. FINAL VERIFICATION BEFORE DELIVERY
+
+Before delivering the ZIP, verify the project yourself.
+
+Verify:
+
+```bash
+docker compose config
+```
+
+and:
+
+```bash
+docker compose up --build
+```
+
+Ensure the web application loads successfully.
+
+Verify that Simulation Mode works without physical hardware.
+
+Test at least one complete simulated workflow:
+
+```text
+Load maze
+→ Start learning run
+→ Detect intersections
+→ Record L/F/R/B path
+→ Reach finish
+→ Optimize path
+→ Save TXT
+→ Load TXT
+→ Start optimized run
+→ Reach finish
+```
+
+Test the serial layer using a mock Arduino if physical HC-05 hardware is not available.
+
+Verify:
+
+```text
+connect
+telemetry
+PID update
+start scan
+stop
+path download
+path upload
+ACK handling
+reconnection
+```
+
+Run automated tests.
+
+Fix errors before packaging.
+
+---
+
+# 47. FINAL RESPONSE
+
+After finishing, give me:
+
+1. **`maze-robot-control.zip`**
+2. A short architecture summary
+3. Instructions to start it
+4. Instructions to pair/connect HC-05
+5. Instructions to flash `maze_hc05.ino`
+6. Instructions to perform a learning run
+7. Instructions to save the learned path
+8. Instructions to upload a path back to the robot
+9. Instructions to run the optimized path
+10. A list of changes made from the original `maze.ino`
+11. Any hardware limitations or assumptions that could not be validated without the physical robot
+
+The priority is **functionality and correctness**, not merely visual appearance.
+
+The final application should make it possible to go from:
+
+```text
+Understand robot
+        ↓
+Simulate robot
+        ↓
+Tune controller
+        ↓
+Explore maze
+        ↓
+Record route
+        ↓
+Optimize route
+        ↓
+Save route to PC
+        ↓
+Connect physical robot through HC-05
+        ↓
+Monitor robot in real time
+        ↓
+Upload optimized route
+        ↓
+Run physical robot
+```
+
+from one integrated platform.

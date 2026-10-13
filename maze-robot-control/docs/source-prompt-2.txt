@@ -1,0 +1,2504 @@
+You are a **senior robotics software engineer, embedded Arduino developer, computer-vision engineer, simulation engineer, and full-stack web developer**.
+
+I have provided an existing Arduino file named **`maze.ino`** for a line-following maze robot.
+
+Your task is to analyze the Arduino code first and then build a complete:
+
+# Maze Robot Digital Twin, Simulation, Maze Importer & Real-Robot Control Platform
+
+The system must have two primary operating modes:
+
+1. **Simulation Mode**
+2. **Real Robot Mode**
+
+It must also contain a **Universal Maze Importer** capable of converting many different maze representations into a common simulation format.
+
+The application should function as:
+
+- a digital twin of the physical robot,
+- a maze-solving simulator,
+- an LSRB learning environment,
+- a PD/PID tuning laboratory,
+- a maze-image processing tool,
+- a path-analysis tool,
+- a serial monitor,
+- and a real-time HC-05 robot control dashboard.
+
+Do not create only UI mockups.
+
+The algorithms, simulator, maze importer, path optimization, serial communication, firmware, Bluetooth communication, path transfer, telemetry, and Docker environment must actually work.
+
+---
+
+# 1. ANALYZE THE EXISTING `maze.ino`
+
+Before implementing the application, inspect the supplied Arduino code.
+
+Document:
+
+- Hardware configuration
+- Arduino pins
+- MCP3008 configuration
+- Eight line sensors
+- Motor driver
+- PWM pins
+- Direction pins
+- Sensor normalization
+- Line position calculation
+- PD/PID logic
+- Junction detection
+- Turning functions
+- Maze exploration
+- Path recording
+- Path simplification
+- Shortest-path execution
+- Serial output
+- Blocking sections
+- Possible bugs
+- Potential HC-05 pin conflicts
+
+Important functions may include:
+
+```text
+TrackMaze()
+RunShortestPath()
+CalculateShortestPath()
+AddPath()
+Read()
+ReadLine()
+Pid()
+PidTime()
+Motors()
+Move()
+FF()
+LL()
+RR()
+Uturn()
+```
+
+Verify these directly from the source.
+
+Do not assume their behavior from their names.
+
+The robot path alphabet is expected to include:
+
+```text
+L = Left
+F = Forward / Straight
+R = Right
+B = Back / U-turn
+```
+
+Verify this from `maze.ino`.
+
+---
+
+# 2. OVERALL SYSTEM ARCHITECTURE
+
+The system should represent:
+
+```text
+                  MAZE
+                    ↓
+              8 IR Sensors
+                    ↓
+                 MCP3008
+                    ↓
+          Sensor Normalization
+                    ↓
+             Line Position
+                    ↓
+                  Error
+                    ↓
+              PD / PID
+                    ↓
+          Motor Speed Commands
+                    ↓
+             Robot Movement
+                    ↓
+          Junction Detection
+                    ↓
+              LSRB Decision
+                    ↓
+             Path Recording
+                    ↓
+           Path Optimization
+                    ↓
+         Shortest-Path Replay
+```
+
+The application must visualize this complete process.
+
+---
+
+# 3. REQUIRED TECH STACK
+
+Preferred frontend:
+
+```text
+Next.js
+TypeScript
+React
+Tailwind CSS
+shadcn/ui
+```
+
+Use an appropriate graphing system such as:
+
+```text
+Recharts
+Plotly
+Chart.js
+```
+
+Use:
+
+```text
+Canvas
+SVG
+or WebGL
+```
+
+for maze and robot visualization.
+
+Preferred backend:
+
+```text
+FastAPI
+Python
+WebSocket
+PySerial
+Pydantic
+OpenCV
+NumPy
+```
+
+OpenCV should be used for maze image processing where appropriate.
+
+---
+
+# 4. DOCKER
+
+Provide:
+
+```text
+docker-compose.yml
+```
+
+The main application must run with:
+
+```bash
+docker compose up --build
+```
+
+At minimum provide:
+
+```text
+frontend
+backend
+```
+
+services.
+
+Simulation Mode must work even when no physical robot is connected.
+
+---
+
+# 5. UNIVERSAL MAZE SYSTEM
+
+The simulator must NOT be limited to hard-coded mazes.
+
+Users must be able to:
+
+- create a maze,
+- edit a maze,
+- generate a maze,
+- load included example mazes,
+- and upload external mazes.
+
+Create one common internal representation called something similar to:
+
+```text
+MazeModel
+```
+
+All imported maze formats must eventually be converted into this representation.
+
+For example:
+
+```typescript
+interface MazeModel {
+    id: string;
+    name: string;
+
+    width: number;
+    height: number;
+
+    lineWidth?: number;
+    scale?: number;
+
+    start: Point;
+    finish?: Point;
+
+    centerline: Point[];
+    segments: Segment[];
+    intersections: Intersection[];
+    graph: MazeGraph;
+
+    sourceType: string;
+}
+```
+
+The simulator should therefore not care whether the maze originally came from:
+
+```text
+PNG
+JPEG
+SVG
+JSON
+CSV
+manual drawing
+camera photograph
+```
+
+Once imported, everything should become a `MazeModel`.
+
+---
+
+# 6. UNIVERSAL MAZE IMPORTER
+
+This is a major required feature.
+
+Create an:
+
+# Import Maze
+
+page.
+
+Users should be able to drag and drop a maze into the application.
+
+Support as many practical maze types as possible.
+
+At minimum support:
+
+```text
+.png
+.jpg
+.jpeg
+.webp
+.bmp
+.svg
+.json
+.csv
+.txt
+```
+
+Also support PDF maze diagrams if reasonably possible:
+
+```text
+.pdf
+```
+
+For PDFs, allow the user to select the page containing the maze.
+
+---
+
+# 7. MAZE IMAGE IMPORT
+
+A user should be able to upload something as simple as:
+
+```text
+photo of a printed maze
+screenshot
+scanned worksheet
+hand-drawn maze
+competition maze diagram
+PNG map
+JPEG photograph
+```
+
+The application should analyze it automatically.
+
+Processing pipeline:
+
+```text
+Uploaded Image
+       ↓
+Image preprocessing
+       ↓
+Perspective correction
+       ↓
+Grayscale
+       ↓
+Noise reduction
+       ↓
+Thresholding
+       ↓
+Line/background detection
+       ↓
+Morphological cleanup
+       ↓
+Skeletonization / centerline extraction
+       ↓
+Intersection detection
+       ↓
+Graph generation
+       ↓
+User verification
+       ↓
+Simulation-ready MazeModel
+```
+
+Do not assume the image is perfectly aligned.
+
+---
+
+# 8. PERSPECTIVE CORRECTION
+
+Photos may be taken at an angle.
+
+Allow the user to select four maze corners:
+
+```text
+Top Left
+Top Right
+Bottom Right
+Bottom Left
+```
+
+Then perform perspective transformation.
+
+Show:
+
+```text
+Original
+vs
+Corrected
+```
+
+before continuing.
+
+Automatic corner detection may also be attempted.
+
+However, always provide manual correction.
+
+---
+
+# 9. BLACK-LINE AND WHITE-LINE MAZES
+
+The importer must support:
+
+```text
+Black line on white background
+```
+
+and:
+
+```text
+White line on black background
+```
+
+Provide:
+
+```text
+Auto Detect
+Black Line
+White Line
+```
+
+options.
+
+Show a binary preview before maze extraction.
+
+---
+
+# 10. THRESHOLD CONTROL
+
+Provide interactive controls such as:
+
+```text
+Threshold
+Adaptive Threshold
+Blur
+Contrast
+Line cleanup
+Minimum segment size
+Morphology strength
+```
+
+As these controls are changed, update the extracted maze preview.
+
+The purpose is to allow difficult photographs or scans to be repaired manually.
+
+---
+
+# 11. LINE-MAZE EXTRACTION
+
+This physical robot is primarily a **line-following robot**.
+
+Therefore uploaded mazes should preferably be transformed into their line-center representation.
+
+Example:
+
+```text
+█████████████
+      █
+      █
+██████┼██████
+      █
+      █
+```
+
+should internally become something similar to:
+
+```text
+      │
+      │
+──────┼──────
+      │
+      │
+```
+
+Use skeletonization or another appropriate centerline extraction method.
+
+---
+
+# 12. INTERSECTION DETECTION
+
+Automatically identify:
+
+```text
+Straight segment
+Left turn
+Right turn
+T-junction
+Cross intersection
+Dead end
+Start
+Finish
+```
+
+Each intersection should become a node.
+
+For example:
+
+```text
+         Node B
+           |
+           |
+Node A ---+--- Node C
+           |
+           |
+         Node D
+```
+
+Represent this internally as a graph.
+
+---
+
+# 13. GRAPH REPRESENTATION
+
+Generate something similar to:
+
+```text
+Node
+Edge
+Direction
+Distance
+Heading
+```
+
+For example:
+
+```json
+{
+  "nodes": [
+    {
+      "id": "A",
+      "x": 100,
+      "y": 250
+    },
+    {
+      "id": "B",
+      "x": 300,
+      "y": 250
+    }
+  ]
+}
+```
+
+Edges should store useful information such as:
+
+```text
+length
+orientation
+connected nodes
+curve geometry
+```
+
+This graph can later be used for:
+
+- maze analysis
+- path verification
+- shortest-path comparison
+- robot-location visualization
+- LSRB visualization
+
+---
+
+# 14. MANUAL MAZE CORRECTION
+
+Automatic computer vision will not always be perfect.
+
+Therefore, after importing a maze, provide a full correction editor.
+
+Users must be able to:
+
+```text
+Add segment
+Delete segment
+Connect segments
+Split segment
+Move intersection
+Add intersection
+Delete intersection
+Mark dead end
+Mark start
+Mark finish
+Change line width
+Crop maze
+Rotate maze
+Flip maze
+```
+
+The application should never silently invent missing maze connections.
+
+If confidence is low, highlight the uncertain area.
+
+Example:
+
+```text
+⚠ Possible missing connection
+```
+
+and allow the user to fix it.
+
+---
+
+# 15. START AND FINISH SELECTION
+
+After importing the maze, allow the user to click:
+
+```text
+Set Start
+Set Finish
+```
+
+The starting robot heading must also be configurable:
+
+```text
+↑ North
+→ East
+↓ South
+← West
+```
+
+or through a rotation control.
+
+This is critical because an LSRB path depends on robot orientation.
+
+---
+
+# 16. SCALE CALIBRATION
+
+A maze image does not automatically contain real-world dimensions.
+
+Allow the user to calibrate it.
+
+Example:
+
+User draws a line between two known points and enters:
+
+```text
+500 mm
+```
+
+The application calculates:
+
+```text
+pixels/mm
+```
+
+Then display:
+
+```text
+Maze width: 1800 mm
+Maze height: 1200 mm
+Line width: 18 mm
+```
+
+This scale should be used for realistic robot simulation.
+
+---
+
+# 17. REAL ROBOT COMPATIBILITY CHECKER
+
+A maze that can be represented mathematically may not necessarily be drivable by the actual robot.
+
+Therefore add:
+
+# Physical Compatibility Check
+
+Analyze:
+
+```text
+Line width
+Corner radius
+Intersection spacing
+Minimum segment length
+Robot width
+Robot length
+Wheelbase
+Sensor-array width
+Sensor-array position
+Turning radius
+```
+
+Highlight potential problems.
+
+For example:
+
+```text
+⚠ Segment between Junction 4 and Junction 5 is only 45 mm.
+
+Robot requires approximately 75 mm to reliably detect and execute this maneuver.
+```
+
+Or:
+
+```text
+⚠ Line width appears significantly larger than the calibrated sensor spacing.
+```
+
+This should be a warning rather than automatically rejecting the maze.
+
+---
+
+# 18. MAZE IMPORT PREVIEW
+
+Before accepting an imported maze, show four views:
+
+```text
+1. Original
+2. Processed binary image
+3. Extracted centerline
+4. Detected graph
+```
+
+Allow toggling between them.
+
+Example:
+
+```text
+[Original]
+[Binary]
+[Centerline]
+[Graph]
+```
+
+This is important for debugging incorrect maze detection.
+
+---
+
+# 19. IMPORT CONFIDENCE
+
+Provide an analysis result such as:
+
+```text
+Maze Detection Confidence: 92%
+
+Detected:
+18 intersections
+7 dead ends
+31 segments
+1 start point
+1 finish point
+
+Warnings:
+2 uncertain intersections
+1 disconnected line
+```
+
+Do not pretend the conversion was perfect if it was not.
+
+---
+
+# 20. DISCONNECTED-LINE DETECTION
+
+Detect accidental gaps.
+
+For example:
+
+```text
+──────     ──────
+```
+
+If two endpoints are extremely close, suggest:
+
+```text
+Possible broken line.
+
+Connect automatically?
+```
+
+The user should be able to accept or reject the fix.
+
+---
+
+# 21. WALL MAZE SUPPORT
+
+Some uploaded mazes may be traditional wall mazes rather than line-following mazes.
+
+Example:
+
+```text
+████████████████
+█              █
+█ ████████████ █
+█ █          █ █
+█ █ ████████ █ █
+```
+
+Since the physical robot follows a line rather than maze walls, provide two interpretations where possible:
+
+```text
+Line Maze
+Wall Maze
+```
+
+For a wall maze, allow the application to generate a navigation centerline through valid corridors.
+
+Clearly label the generated centerline as:
+
+```text
+Converted Path
+```
+
+because it is not the original line.
+
+Allow the user to edit it before simulation.
+
+---
+
+# 22. GRID MAZE IMPORT
+
+Support structured grid formats.
+
+For example CSV:
+
+```text
+1,1,1,1,1
+1,S,0,0,1
+1,0,1,0,1
+1,0,0,F,1
+1,1,1,1,1
+```
+
+where:
+
+```text
+1 = wall
+0 = open
+S = start
+F = finish
+```
+
+Allow configurable interpretation.
+
+---
+
+# 23. JSON MAZE IMPORT
+
+Create and document an official JSON format.
+
+For example:
+
+```json
+{
+  "name": "Example Maze",
+  "units": "mm",
+  "start": {
+    "x": 0,
+    "y": 0,
+    "heading": 0
+  },
+  "finish": {
+    "x": 800,
+    "y": 600
+  },
+  "segments": [],
+  "intersections": []
+}
+```
+
+Also support exporting the current maze to this format.
+
+---
+
+# 24. SVG IMPORT
+
+SVG is particularly useful for competition-field diagrams.
+
+Extract paths from SVG when possible.
+
+Preserve vector geometry rather than rasterizing immediately.
+
+Allow the user to choose which SVG paths represent:
+
+```text
+maze line
+walls
+field border
+decorations
+```
+
+---
+
+# 25. PDF IMPORT
+
+For PDF diagrams:
+
+```text
+Upload PDF
+      ↓
+Select page
+      ↓
+Render selected page
+      ↓
+Crop maze
+      ↓
+Process maze
+```
+
+If vector path extraction is possible, use it.
+
+Otherwise render the selected page at sufficient resolution.
+
+---
+
+# 26. MAZE DRAWING EDITOR
+
+Users should also be able to create a maze without uploading anything.
+
+Provide tools:
+
+```text
+Straight line
+Curve
+90° turn
+T-junction
+Cross junction
+Dead end
+Start
+Finish
+Erase
+Select
+Move
+```
+
+Include snapping.
+
+For example:
+
+```text
+Grid: 10 mm
+Snap: ON
+```
+
+---
+
+# 27. MAZE LIBRARY
+
+Provide local maze storage.
+
+Example:
+
+```text
+My Mazes
+
+Competition Maze
+Test Maze #1
+PID Test Track
+Simple Left-Turn Maze
+Complex LSRB Maze
+```
+
+For each maze show:
+
+```text
+Preview
+Date created
+Dimensions
+Intersections
+Estimated difficulty
+Last simulation
+```
+
+---
+
+# 28. GENERATED MAZES
+
+Optionally provide:
+
+```text
+Generate Maze
+```
+
+with parameters:
+
+```text
+Easy
+Medium
+Hard
+
+Number of intersections
+Number of dead ends
+Maze size
+Seed
+```
+
+Generated mazes must still use the same `MazeModel`.
+
+---
+
+# 29. SIMULATION MODE
+
+After any maze is created or imported, it should immediately be usable in the simulator.
+
+The simulator should show:
+
+- maze
+- robot
+- orientation
+- wheels
+- eight IR sensors
+- sensor footprints
+- travelled path
+- intersection nodes
+- current LSRB decision
+
+Controls:
+
+```text
+Start
+Pause
+Resume
+Stop
+Reset
+Step
+
+0.25×
+0.5×
+1×
+2×
+4×
+```
+
+Modes:
+
+```text
+Learning Run
+Optimized Run
+Manual
+```
+
+---
+
+# 30. REALISTIC SENSOR SIMULATION
+
+Do not determine robot direction directly from graph nodes.
+
+The main simulation should model the eight virtual sensors interacting with the maze image/geometry.
+
+For every virtual sensor show:
+
+```text
+Raw ADC
+Normalized
+Threshold result
+Position
+```
+
+Sensor layout:
+
+```text
+S0 S1 S2 S3 S4 S5 S6 S7
+```
+
+Allow configurable:
+
+```text
+sensor spacing
+sensor offset
+sensor noise
+Min values
+Max values
+threshold
+```
+
+This makes the simulator useful for actual PID development.
+
+A simplified graph-only simulation may exist separately for fast algorithm testing.
+
+---
+
+# 31. SENSOR CALIBRATION
+
+Create an interactive calibration page.
+
+Show:
+
+```text
+Sensor
+Minimum
+Maximum
+Raw
+Normalized
+Threshold
+```
+
+Explain:
+
+```text
+ADC reading
+     ↓
+Min / Max
+     ↓
+Normalized value
+     ↓
+Line detection
+```
+
+Support simulation and actual robot telemetry.
+
+---
+
+# 32. LINE POSITION
+
+Reproduce the behavior of the existing `ReadLine()` algorithm.
+
+For example:
+
+```text
+0 -------------------------- 7000
+              ^
+            3500
+```
+
+Display:
+
+```text
+Current Position
+Target Position
+Error
+```
+
+Show the weighted sensor calculation visually.
+
+---
+
+# 33. PID / PD LAB
+
+Create an interactive controller laboratory.
+
+Controls:
+
+```text
+Base Speed
+Kp
+Ki
+Kd
+```
+
+Modes:
+
+```text
+P
+PI
+PD
+PID
+```
+
+If the original `maze.ino` only implements Kp and Kd, explicitly identify it as **PD**, not full PID.
+
+Show graphs:
+
+```text
+Position
+Target
+Error
+P
+I
+D
+Correction
+Left PWM
+Right PWM
+```
+
+Explain:
+
+```text
+P = Kp × Error
+I = Ki × Integral
+D = Kd × ΔError
+
+Correction = P + I + D
+```
+
+Include tuning presets such as:
+
+```text
+Low Kp
+High Kp
+High Kd
+Oscillation
+Slow response
+Stable tuning
+```
+
+---
+
+# 34. LSRB LEARNING MODE
+
+Provide:
+
+# Start Learning Run
+
+The robot should:
+
+```text
+Follow line
+    ↓
+Detect junction
+    ↓
+Determine available directions
+    ↓
+Apply LSRB rule
+    ↓
+Execute turn
+    ↓
+Store path symbol
+```
+
+At intersections show:
+
+```text
+Intersection #7
+
+Left: YES
+Forward: YES
+Right: NO
+
+Decision: LEFT
+
+Reason:
+Left direction has priority.
+```
+
+---
+
+# 35. RAW PATH
+
+Show the learned path live.
+
+Example:
+
+```text
+L L F B L R B R F
+```
+
+Display both:
+
+```text
+Raw Path
+```
+
+and the current robot location on the imported maze.
+
+---
+
+# 36. PATH OPTIMIZATION
+
+Visualize path reduction.
+
+Example:
+
+```text
+Raw:
+L F B L R
+
+      ↓
+
+F B L → R
+
+      ↓
+
+Optimized:
+L R R
+```
+
+Verify the actual simplification rules from the Arduino source.
+
+Possible rules may include:
+
+```text
+L B L → F
+L B F → R
+L B R → B
+
+F B L → R
+F B F → B
+F B R → L
+
+R B L → B
+R B F → L
+R B R → F
+```
+
+Verify these mathematically.
+
+Explain their turn-angle interpretation.
+
+---
+
+# 37. COMPARE LSRB WITH TRUE SHORTEST PATH
+
+Because imported mazes are represented as graphs, provide an optional educational comparison.
+
+Calculate the graph shortest path using something like:
+
+```text
+BFS
+Dijkstra
+```
+
+Then compare:
+
+```text
+LSRB learned path
+LSRB optimized path
+Graph-theoretical shortest path
+```
+
+Show:
+
+```text
+Distance
+Number of turns
+Number of intersections
+```
+
+This must not replace the physical robot's LSRB algorithm.
+
+It is an analysis feature.
+
+---
+
+# 38. OPTIMIZED RUN
+
+Provide:
+
+# Run Optimized Path
+
+Show:
+
+```text
+Current instruction
+Instruction index
+Previous instruction
+Next instruction
+Remaining path
+```
+
+Example:
+
+```text
+Current: R
+Step: 4 / 10
+
+Remaining:
+F L R F B
+```
+
+Support both simulation and real robot.
+
+---
+
+# 39. SERIAL MONITOR
+
+Create a complete serial monitor.
+
+Include:
+
+```text
+Timestamp
+RX
+TX
+Auto-scroll
+Pause
+Clear
+Filter
+Save log
+Command input
+Connection state
+```
+
+Example:
+
+```text
+20:11:42.231 RX SENSOR,132,205,702,911,872,611,170,101
+20:11:42.249 RX PID,3485,-15,-0.15,-0.04,30,30
+20:11:42.328 RX EVENT,JUNCTION,LEFT
+20:11:42.329 RX PATH,L,L,F,B,L
+20:11:43.102 TX GET_STATUS
+```
+
+---
+
+# 40. SERIAL PROTOCOL
+
+Create a documented communication protocol.
+
+For example robot → computer:
+
+```text
+STATUS,SCAN
+SENSOR,120,150,700,900,880,650,140,100
+LINE,3512
+PID,12,0.12,0.04,31,29
+EVENT,JUNCTION,L
+PATH_RAW,LLFBL
+PATH_SHORT,LFR
+```
+
+Computer → robot:
+
+```text
+PING
+GET_STATUS
+GET_SENSORS
+GET_PATH
+GET_SHORT_PATH
+
+START_SCAN
+START_RUN
+STOP
+PAUSE
+RESUME
+
+SET_PID,0.01,0.00,0.08
+SET_SPEED,30
+
+UPLOAD_PATH,LFRFL
+CLEAR_PATH
+```
+
+Improve the protocol if necessary.
+
+---
+
+# 41. NEW HC-05 FIRMWARE
+
+Do not destroy the original:
+
+```text
+maze.ino
+```
+
+Keep it under something such as:
+
+```text
+firmware/original/maze.ino
+```
+
+Create:
+
+```text
+firmware/maze_hc05/maze_hc05.ino
+```
+
+The new firmware must preserve the original functionality and add computer communication.
+
+---
+
+# 42. HC-05
+
+Design HC-05 connectivity.
+
+The primary hardware is expected to include an Arduino Uno.
+
+Because the Uno has only one hardware UART, determine whether:
+
+```text
+SoftwareSerial
+```
+
+should be used.
+
+Check existing pin assignments before selecting HC-05 pins.
+
+Provide wiring documentation for:
+
+```text
+HC-05 VCC
+HC-05 GND
+HC-05 TX
+HC-05 RX
+```
+
+Account for voltage-level considerations for the HC-05 RX pin.
+
+---
+
+# 43. WINDOWS SERIAL BRIDGE
+
+The main development environment is Windows.
+
+HC-05 normally appears as:
+
+```text
+COM5
+COM6
+COM7
+...
+```
+
+Do not assume Docker Desktop can directly and reliably access Windows COM ports.
+
+Use architecture similar to:
+
+```text
+Robot
+  ↕
+HC-05
+  ↕
+Windows Bluetooth
+  ↕
+COM Port
+  ↕
+serial_bridge.py
+  ↕
+WebSocket / TCP
+  ↕
+Docker Backend
+  ↕
+Web Application
+```
+
+Provide:
+
+```text
+serial_bridge.py
+```
+
+and:
+
+```text
+start_windows.bat
+```
+
+---
+
+# 44. FIRMWARE STATE MACHINE
+
+Refactor the robot firmware into states such as:
+
+```text
+IDLE
+CALIBRATION
+MANUAL
+SCAN
+PATH_READY
+RUN_PATH
+PAUSED
+STOPPED
+ERROR
+```
+
+Communication should remain responsive while driving.
+
+Avoid unnecessary blocking loops.
+
+Prefer:
+
+```text
+millis()
+```
+
+for timing where appropriate.
+
+---
+
+# 45. REAL-TIME TELEMETRY
+
+Send:
+
+```text
+Robot mode
+Sensor 0–7
+Line position
+Error
+Kp
+Ki
+Kd
+Controller output
+Left PWM
+Right PWM
+Raw path
+Optimized path
+Path index
+Intersection
+Runtime
+Connection status
+```
+
+Provide configurable telemetry rates such as:
+
+```text
+5 Hz
+10 Hz
+20 Hz
+```
+
+---
+
+# 46. REAL ROBOT DASHBOARD
+
+Show:
+
+### Connection
+
+```text
+Connected / Disconnected
+COM port
+Baud rate
+Latency
+Packet count
+Last packet
+```
+
+### Robot
+
+```text
+IDLE
+SCANNING
+RUNNING
+STOPPED
+ERROR
+```
+
+### Sensors
+
+Eight live indicators.
+
+### Controller
+
+```text
+Position
+Error
+Kp
+Ki
+Kd
+Correction
+Left PWM
+Right PWM
+```
+
+### Path
+
+```text
+Raw Path
+Optimized Path
+Current Step
+```
+
+### Events
+
+```text
+Intersection
+Left turn
+Right turn
+Straight
+Dead end
+U-turn
+Finish
+Line lost
+```
+
+---
+
+# 47. REAL ROBOT POSITION ON IMPORTED MAZE
+
+When a physical robot is running on a maze that was imported into the application, estimate the robot's location on that maze.
+
+Since the current robot may not have wheel encoders or absolute localization, use path/junction progress where appropriate.
+
+For example:
+
+```text
+Current edge:
+Node 7 → Node 8
+
+Estimated progress:
+65%
+```
+
+When the robot reports the next intersection, snap its estimated location to that graph node.
+
+Clearly label this as:
+
+```text
+Estimated Position
+```
+
+rather than pretending it is precise localization.
+
+---
+
+# 48. PATH DOWNLOAD
+
+After learning a maze:
+
+```text
+Robot
+  ↓
+HC-05
+  ↓
+Computer
+  ↓
+TXT
+```
+
+Automatically support files such as:
+
+```text
+maze_2026-10-04_raw.txt
+maze_2026-10-04_shortest.txt
+```
+
+Example:
+
+```text
+LFRLFR
+```
+
+Allow:
+
+# Download Path
+
+from the web interface.
+
+---
+
+# 49. PATH UPLOAD
+
+Allow `.txt` upload.
+
+Example:
+
+```text
+LFRRFL
+```
+
+Validate allowed commands:
+
+```text
+L
+F
+R
+B
+```
+
+Then:
+
+```text
+TXT
+ ↓
+Validate
+ ↓
+Serial transfer
+ ↓
+Arduino
+ ↓
+ACK
+ ↓
+Verification
+```
+
+Do not assume the transfer succeeded.
+
+---
+
+# 50. ROBUST PATH TRANSFER
+
+Use something stronger than blindly sending one string.
+
+For example:
+
+```text
+PATH_BEGIN,12
+PATH_CHUNK,LFRLFRRBFLRR
+PATH_END,CRC
+```
+
+Robot:
+
+```text
+ACK,PATH_BEGIN
+ACK,PATH_CHUNK
+ACK,PATH_END
+PATH_STORED,12
+```
+
+Provide:
+
+```text
+timeout
+retry
+validation
+checksum
+```
+
+where practical.
+
+---
+
+# 51. PATH EDITOR
+
+Provide:
+
+```text
+[L] [F] [R] [F] [L] [B]
+```
+
+Allow:
+
+```text
+Add
+Delete
+Reorder
+Optimize
+Save
+Download
+Upload
+Simulate
+Run on robot
+```
+
+---
+
+# 52. MANUAL CONTROL
+
+Provide:
+
+```text
+Forward
+Backward
+Left
+Right
+Stop
+```
+
+Keyboard:
+
+```text
+W
+A
+S
+D
+Space
+```
+
+Manual control must be clearly separated from autonomous operation.
+
+---
+
+# 53. EMERGENCY STOP
+
+Provide a prominent:
+
+# EMERGENCY STOP
+
+This must immediately request the motors to stop.
+
+Also provide:
+
+```text
+Pause
+Resume
+Reset
+Disconnect
+```
+
+Implement a firmware communication timeout/failsafe where appropriate.
+
+---
+
+# 54. HOW IT WORKS
+
+Provide an educational view.
+
+Selectable components:
+
+```text
+IR sensors
+MCP3008
+Arduino
+Motor driver
+Motors
+HC-05
+PD/PID
+LSRB
+Path optimizer
+Maze graph
+```
+
+For each show:
+
+```text
+Purpose
+Inputs
+Outputs
+Relevant firmware function
+Relevant simulator component
+```
+
+---
+
+# 55. CODE EXPLORER
+
+Map firmware functions to their physical effect.
+
+For example:
+
+```text
+Read()
+  ↓
+Gets sensor measurements
+
+ReadLine()
+  ↓
+Calculates line position
+
+Pid()
+  ↓
+Calculates correction
+
+Motors()
+  ↓
+Controls left/right motor speed
+```
+
+Use the actual source code.
+
+---
+
+# 56. RECORD AND REPLAY
+
+Allow physical and simulated runs to be recorded.
+
+Store:
+
+```text
+timestamp
+sensor values
+position
+error
+motor outputs
+robot state
+junctions
+path updates
+commands
+```
+
+Allow replay later.
+
+---
+
+# 57. EXPORT DATA
+
+Support:
+
+```text
+CSV
+JSON
+TXT
+```
+
+Suggested CSV:
+
+```text
+timestamp
+mode
+sensor_0
+sensor_1
+sensor_2
+sensor_3
+sensor_4
+sensor_5
+sensor_6
+sensor_7
+position
+error
+kp
+ki
+kd
+controller_output
+left_motor
+right_motor
+path_index
+event
+```
+
+---
+
+# 58. SHARED ROBOT STATE MODEL
+
+Simulation and physical modes should use the same frontend data model.
+
+For example:
+
+```typescript
+interface RobotState {
+    mode: RobotMode;
+
+    sensors: number[];
+
+    position: number;
+    targetPosition: number;
+    error: number;
+
+    kp: number;
+    ki: number;
+    kd: number;
+
+    leftMotor: number;
+    rightMotor: number;
+
+    rawPath: string;
+    optimizedPath: string;
+
+    pathIndex: number;
+
+    lastIntersection?: string;
+}
+```
+
+Simulation produces this state from software.
+
+Real Robot Mode produces the same state from Arduino telemetry.
+
+---
+
+# 59. PROJECT STRUCTURE
+
+Use a structure similar to:
+
+```text
+maze-robot-control/
+│
+├── frontend/
+│   ├── app/
+│   ├── components/
+│   ├── maze/
+│   ├── simulation/
+│   ├── hooks/
+│   └── lib/
+│
+├── backend/
+│   ├── app/
+│   │   ├── api/
+│   │   ├── serial/
+│   │   ├── simulation/
+│   │   ├── maze_processing/
+│   │   ├── computer_vision/
+│   │   ├── models/
+│   │   └── services/
+│   └── requirements.txt
+│
+├── firmware/
+│   ├── original/
+│   │   └── maze.ino
+│   │
+│   └── maze_hc05/
+│       └── maze_hc05.ino
+│
+├── serial-bridge/
+│   ├── serial_bridge.py
+│   ├── requirements.txt
+│   └── start_windows.bat
+│
+├── mazes/
+├── paths/
+├── recordings/
+├── tests/
+├── docs/
+│
+├── docker-compose.yml
+├── .env.example
+└── README.md
+```
+
+You may improve the architecture if necessary.
+
+---
+
+# 60. UI
+
+Suggested navigation:
+
+```text
+Dashboard
+
+Maze
+ ├─ Import Maze
+ ├─ Draw Maze
+ ├─ Maze Library
+ └─ Maze Analysis
+
+Simulation
+
+Maze Solver
+
+PID Lab
+
+Path Analyzer
+
+Real Robot
+
+Serial Monitor
+
+Recordings
+
+How It Works
+
+Firmware
+
+Settings
+```
+
+---
+
+# 61. MAZE IMPORT WORKFLOW
+
+The complete user workflow should be:
+
+```text
+Upload Maze
+      ↓
+Detect file type
+      ↓
+Process image/vector/data
+      ↓
+Detect maze
+      ↓
+Extract centerline
+      ↓
+Detect intersections
+      ↓
+Generate graph
+      ↓
+Select start
+      ↓
+Select finish
+      ↓
+Set robot heading
+      ↓
+Calibrate dimensions
+      ↓
+Check physical compatibility
+      ↓
+Correct errors
+      ↓
+Save MazeModel
+      ↓
+Run Simulation
+```
+
+---
+
+# 62. SIMULATION WORKFLOW
+
+The user should then be able to:
+
+```text
+Imported Maze
+      ↓
+Place Robot
+      ↓
+Start Learning Run
+      ↓
+Virtual IR Sensors
+      ↓
+PD/PID
+      ↓
+LSRB
+      ↓
+Raw Path
+      ↓
+Path Optimization
+      ↓
+Optimized Path
+      ↓
+Replay
+```
+
+---
+
+# 63. PHYSICAL ROBOT WORKFLOW
+
+The final workflow should support:
+
+```text
+Upload Competition Maze
+        ↓
+Verify Maze
+        ↓
+Test in Simulation
+        ↓
+Tune PD/PID
+        ↓
+Connect HC-05
+        ↓
+Start Physical Learning Run
+        ↓
+Monitor Telemetry
+        ↓
+Receive Raw Path
+        ↓
+Optimize Path
+        ↓
+Save TXT
+        ↓
+Upload Optimized Path
+        ↓
+Run Physical Robot
+```
+
+---
+
+# 64. TESTING
+
+Create tests for:
+
+### Maze importer
+
+Test:
+
+```text
+PNG
+JPEG
+SVG
+CSV
+JSON
+```
+
+### Image processing
+
+Test:
+
+```text
+clean maze
+rotated maze
+perspective image
+low contrast image
+black line
+white line
+broken line
+```
+
+### Intersection detection
+
+Verify:
+
+```text
+left
+right
+T
+cross
+dead end
+```
+
+### Graph generation
+
+Verify connectivity.
+
+### LSRB
+
+Verify decisions.
+
+### Path optimizer
+
+Verify every simplification rule.
+
+### Serial parser
+
+Test malformed packets.
+
+### Path transfer
+
+Test:
+
+```text
+ACK
+timeout
+retry
+invalid CRC
+```
+
+---
+
+# 65. IMPORTANT LIMITATION
+
+Do not claim that literally every possible picture can automatically be converted perfectly.
+
+If the system cannot confidently interpret an uploaded maze, it must report:
+
+```text
+Maze extraction requires correction.
+```
+
+Then open the maze editor.
+
+The system should make a **best effort to support arbitrary maze layouts**, while always allowing manual correction.
+
+This is preferable to generating an incorrect maze silently.
+
+---
+
+# 66. ACCEPTANCE TEST: EXTERNAL MAZE
+
+The following must work without changing source code:
+
+1. User uploads a completely new PNG maze that was never included with the project.
+2. Application extracts the maze.
+3. Application identifies intersections.
+4. User fixes any incorrect intersections.
+5. User selects Start and Finish.
+6. User specifies physical scale.
+7. Application generates `MazeModel`.
+8. Robot appears on that maze.
+9. User starts LSRB learning.
+10. Robot completes the maze.
+11. Raw path is displayed.
+12. Path is simplified.
+13. Optimized run is performed.
+
+No maze should need to be hard-coded into the application.
+
+---
+
+# 67. ACCEPTANCE TEST: PHOTO OF A REAL MAZE
+
+Test using a photograph taken from an angle.
+
+The user should be able to:
+
+```text
+Upload photo
+→ Correct perspective
+→ Crop
+→ Adjust threshold
+→ Extract maze
+→ Fix intersections
+→ Set scale
+→ Simulate
+```
+
+---
+
+# 68. ACCEPTANCE TEST: PHYSICAL ROBOT
+
+Using mock serial hardware if a physical HC-05 robot is unavailable, verify:
+
+```text
+Connect
+→ Read telemetry
+→ Change controller parameters
+→ Start scan
+→ Receive junction events
+→ Receive path
+→ Save TXT
+→ Upload path
+→ Receive ACK
+→ Start optimized run
+→ Stop
+→ Reconnect
+```
+
+---
+
+# 69. DOCUMENTATION
+
+README must explain:
+
+1. Project architecture
+2. Existing `maze.ino`
+3. Simulator
+4. Maze importer
+5. Supported maze formats
+6. Image preprocessing
+7. Perspective correction
+8. Maze editor
+9. Scale calibration
+10. Physical compatibility analysis
+11. LSRB
+12. Path optimization
+13. PID tuning
+14. HC-05 wiring
+15. Windows Bluetooth pairing
+16. COM ports
+17. Serial bridge
+18. Docker
+19. Real robot connection
+20. Path download
+21. Path upload
+22. Firmware flashing
+23. Troubleshooting
+
+---
+
+# 70. FINAL DELIVERABLE
+
+Provide:
+
+```text
+maze-robot-control.zip
+```
+
+containing the complete working system.
+
+It must include:
+
+```text
+Frontend
+Backend
+Computer-vision maze importer
+Maze editor
+Maze simulation engine
+LSRB simulator
+PID simulator
+Original maze.ino
+Updated HC-05 firmware
+Serial bridge
+Serial monitor
+Path manager
+Record/replay
+Tests
+docker-compose.yml
+README.md
+.env.example
+Example mazes
+```
+
+Do not leave essential functionality as TODO placeholders.
+
+---
+
+# 71. FINAL VERIFICATION
+
+Before packaging, run:
+
+```bash
+docker compose config
+```
+
+and:
+
+```bash
+docker compose up --build
+```
+
+Verify the frontend loads.
+
+Then test:
+
+```text
+Upload arbitrary maze
+        ↓
+Extract maze
+        ↓
+Correct maze
+        ↓
+Set start/finish
+        ↓
+Run simulation
+        ↓
+Perform LSRB scan
+        ↓
+Generate raw path
+        ↓
+Optimize path
+        ↓
+Download TXT
+        ↓
+Reload TXT
+        ↓
+Perform optimized run
+```
+
+Also test the real connection using either physical hardware or a mock serial robot.
+
+---
+
+# FINAL GOAL
+
+The completed application should support this complete workflow:
+
+```text
+      ANY MAZE
+         ↓
+Image / Photo / SVG / CSV / JSON / Drawing
+         ↓
+      Maze Importer
+         ↓
+ Computer Vision / Parsing
+         ↓
+ Centerline Extraction
+         ↓
+Intersection Detection
+         ↓
+      Maze Graph
+         ↓
+ Manual Verification
+         ↓
+ Physical Compatibility Check
+         ↓
+      Simulation
+         ↓
+  Sensor Simulation
+         ↓
+      PD / PID
+         ↓
+       LSRB
+         ↓
+   Learning Run
+         ↓
+      Raw Path
+         ↓
+ Path Optimization
+         ↓
+   Optimized Path
+         ↓
+      TXT File
+         ↓
+    HC-05 Upload
+         ↓
+   Physical Robot
+         ↓
+ Real-Time Monitoring
+         ↓
+   Optimized Run
+```
+
+The priority is **functional correctness, realistic robot behavior, flexibility, and educational value**, not simply attractive UI.

@@ -1,0 +1,502 @@
+[
+  {
+    "type": "DiscoveredMaze",
+    "session": "discovery-demo",
+    "revision": 1,
+    "updated": 1791128271.4614782,
+    "phase": "LEARNING",
+    "robotMode": "SCAN",
+    "rawPath": "",
+    "complete": false,
+    "units": "schematic",
+    "nodes": [
+      {
+        "id": "N0",
+        "x": 0,
+        "y": 0,
+        "kind": "start",
+        "visits": 0
+      }
+    ],
+    "edges": [],
+    "currentNode": "N0",
+    "heading": 0,
+    "pending": {
+      "source": "N0",
+      "target": null,
+      "heading": 0
+    },
+    "observations": [],
+    "warnings": [
+      "DEMO: synthetic turn reports. No real robot measurements.",
+      "Partial explored topology only. Corridor lengths and physical position are unknown.",
+      "Layout assumes successful 90\u00b0 turns and a tree maze. Loops and missed junctions cannot be resolved automatically."
+    ],
+    "positionMeasured": false,
+    "distanceMeasured": false
+  },
+  {
+    "type": "DiscoveredMaze",
+    "session": "discovery-demo",
+    "revision": 2,
+    "updated": 1791128271.4615202,
+    "phase": "LEARNING",
+    "robotMode": "SCAN",
+    "rawPath": "L",
+    "complete": false,
+    "units": "schematic",
+    "nodes": [
+      {
+        "id": "N0",
+        "x": 0,
+        "y": 0,
+        "kind": "start",
+        "visits": 0
+      },
+      {
+        "id": "N1",
+        "x": 140,
+        "y": 0,
+        "kind": "junction",
+        "visits": 1
+      }
+    ],
+    "edges": [
+      {
+        "id": "E0",
+        "a": "N0",
+        "b": "N1",
+        "traversals": 1,
+        "length": null,
+        "certainty": "inferred"
+      }
+    ],
+    "currentNode": "N1",
+    "heading": 3,
+    "pending": {
+      "source": "N1",
+      "target": null,
+      "heading": 3
+    },
+    "observations": [
+      {
+        "index": 1,
+        "node": "N1",
+        "turn": "L",
+        "heading": 3,
+        "time": 1791128271.4615188
+      }
+    ],
+    "warnings": [
+      "DEMO: synthetic turn reports. No real robot measurements.",
+      "Partial explored topology only. Corridor lengths and physical position are unknown.",
+      "Layout assumes successful 90\u00b0 turns and a tree maze. Loops and missed junctions cannot be resolved automatically."
+    ],
+    "positionMeasured": false,
+    "distanceMeasured": false
+  },
+  {
+    "type": "DiscoveredMaze",
+    "session": "discovery-demo",
+    "revision": 3,
+    "updated": 1791128271.4615614,
+    "phase": "LEARNING",
+    "robotMode": "SCAN",
+    "rawPath": "LB",
+    "complete": false,
+    "units": "schematic",
+    "nodes": [
+      {
+        "id": "N0",
+        "x": 0,
+        "y": 0,
+        "kind": "start",
+        "visits": 0
+      },
+      {
+        "id": "N1",
+        "x": 140,
+        "y": 0,
+        "kind": "junction",
+        "visits": 1
+      },
+      {
+        "id": "N2",
+        "x": 140,
+        "y": -140,
+        "kind": "dead-end report",
+        "visits": 1
+      }
+    ],
+    "edges": [
+      {
+        "id": "E0",
+        "a": "N0",
+        "b": "N1",
+        "traversals": 1,
+        "length": null,
+        "certainty": "inferred"
+      },
+      {
+        "id": "E1",
+        "a": "N1",
+        "b": "N2",
+        "traversals": 1,
+        "length": null,
+        "certainty": "inferred"
+      }
+    ],
+    "currentNode": "N2",
+    "heading": 1,
+    "pending": {
+      "source": "N2",
+      "target": "N1",
+      "heading": 1
+    },
+    "observations": [
+      {
+        "index": 1,
+        "node": "N1",
+        "turn": "L",
+        "heading": 3,
+        "time": 1791128271.4615188
+      },
+      {
+        "index": 2,
+        "node": "N2",
+        "turn": "B",
+        "heading": 1,
+        "time": 1791128271.4615605
+      }
+    ],
+    "warnings": [
+      "DEMO: synthetic turn reports. No real robot measurements.",
+      "Partial explored topology only. Corridor lengths and physical position are unknown.",
+      "Layout assumes successful 90\u00b0 turns and a tree maze. Loops and missed junctions cannot be resolved automatically."
+    ],
+    "positionMeasured": false,
+    "distanceMeasured": false
+  },
+  {
+    "type": "DiscoveredMaze",
+    "session": "discovery-demo",
+    "revision": 4,
+    "updated": 1791128271.4616032,
+    "phase": "LEARNING",
+    "robotMode": "SCAN",
+    "rawPath": "LBL",
+    "complete": false,
+    "units": "schematic",
+    "nodes": [
+      {
+        "id": "N0",
+        "x": 0,
+        "y": 0,
+        "kind": "start",
+        "visits": 0
+      },
+      {
+        "id": "N1",
+        "x": 140,
+        "y": 0,
+        "kind": "junction",
+        "visits": 2
+      },
+      {
+        "id": "N2",
+        "x": 140,
+        "y": -140,
+        "kind": "dead-end report",
+        "visits": 1
+      }
+    ],
+    "edges": [
+      {
+        "id": "E0",
+        "a": "N0",
+        "b": "N1",
+        "traversals": 1,
+        "length": null,
+        "certainty": "inferred"
+      },
+      {
+        "id": "E1",
+        "a": "N1",
+        "b": "N2",
+        "traversals": 2,
+        "length": null,
+        "certainty": "inferred"
+      }
+    ],
+    "currentNode": "N1",
+    "heading": 0,
+    "pending": {
+      "source": "N1",
+      "target": null,
+      "heading": 0
+    },
+    "observations": [
+      {
+        "index": 1,
+        "node": "N1",
+        "turn": "L",
+        "heading": 3,
+        "time": 1791128271.4615188
+      },
+      {
+        "index": 2,
+        "node": "N2",
+        "turn": "B",
+        "heading": 1,
+        "time": 1791128271.4615605
+      },
+      {
+        "index": 3,
+        "node": "N1",
+        "turn": "L",
+        "heading": 0,
+        "time": 1791128271.461603
+      }
+    ],
+    "warnings": [
+      "DEMO: synthetic turn reports. No real robot measurements.",
+      "Partial explored topology only. Corridor lengths and physical position are unknown.",
+      "Layout assumes successful 90\u00b0 turns and a tree maze. Loops and missed junctions cannot be resolved automatically."
+    ],
+    "positionMeasured": false,
+    "distanceMeasured": false
+  },
+  {
+    "type": "DiscoveredMaze",
+    "session": "discovery-demo",
+    "revision": 5,
+    "updated": 1791128271.4616423,
+    "phase": "LEARNING",
+    "robotMode": "SCAN",
+    "rawPath": "LBLF",
+    "complete": false,
+    "units": "schematic",
+    "nodes": [
+      {
+        "id": "N0",
+        "x": 0,
+        "y": 0,
+        "kind": "start",
+        "visits": 0
+      },
+      {
+        "id": "N1",
+        "x": 140,
+        "y": 0,
+        "kind": "junction",
+        "visits": 2
+      },
+      {
+        "id": "N2",
+        "x": 140,
+        "y": -140,
+        "kind": "dead-end report",
+        "visits": 1
+      },
+      {
+        "id": "N3",
+        "x": 280,
+        "y": 0,
+        "kind": "junction",
+        "visits": 1
+      }
+    ],
+    "edges": [
+      {
+        "id": "E0",
+        "a": "N0",
+        "b": "N1",
+        "traversals": 1,
+        "length": null,
+        "certainty": "inferred"
+      },
+      {
+        "id": "E1",
+        "a": "N1",
+        "b": "N2",
+        "traversals": 2,
+        "length": null,
+        "certainty": "inferred"
+      },
+      {
+        "id": "E2",
+        "a": "N1",
+        "b": "N3",
+        "traversals": 1,
+        "length": null,
+        "certainty": "inferred"
+      }
+    ],
+    "currentNode": "N3",
+    "heading": 0,
+    "pending": {
+      "source": "N3",
+      "target": null,
+      "heading": 0
+    },
+    "observations": [
+      {
+        "index": 1,
+        "node": "N1",
+        "turn": "L",
+        "heading": 3,
+        "time": 1791128271.4615188
+      },
+      {
+        "index": 2,
+        "node": "N2",
+        "turn": "B",
+        "heading": 1,
+        "time": 1791128271.4615605
+      },
+      {
+        "index": 3,
+        "node": "N1",
+        "turn": "L",
+        "heading": 0,
+        "time": 1791128271.461603
+      },
+      {
+        "index": 4,
+        "node": "N3",
+        "turn": "F",
+        "heading": 0,
+        "time": 1791128271.461642
+      }
+    ],
+    "warnings": [
+      "DEMO: synthetic turn reports. No real robot measurements.",
+      "Partial explored topology only. Corridor lengths and physical position are unknown.",
+      "Layout assumes successful 90\u00b0 turns and a tree maze. Loops and missed junctions cannot be resolved automatically."
+    ],
+    "positionMeasured": false,
+    "distanceMeasured": false
+  },
+  {
+    "type": "DiscoveredMaze",
+    "session": "discovery-demo",
+    "revision": 6,
+    "updated": 1791128271.4616854,
+    "phase": "COMPLETE",
+    "robotMode": "SCAN",
+    "rawPath": "LBLF",
+    "complete": true,
+    "units": "schematic",
+    "nodes": [
+      {
+        "id": "N0",
+        "x": 0,
+        "y": 0,
+        "kind": "start",
+        "visits": 0
+      },
+      {
+        "id": "N1",
+        "x": 140,
+        "y": 0,
+        "kind": "junction",
+        "visits": 2
+      },
+      {
+        "id": "N2",
+        "x": 140,
+        "y": -140,
+        "kind": "dead-end report",
+        "visits": 1
+      },
+      {
+        "id": "N3",
+        "x": 280,
+        "y": 0,
+        "kind": "junction",
+        "visits": 1
+      },
+      {
+        "id": "N4",
+        "x": 420,
+        "y": 0,
+        "kind": "finish",
+        "visits": 1
+      }
+    ],
+    "edges": [
+      {
+        "id": "E0",
+        "a": "N0",
+        "b": "N1",
+        "traversals": 1,
+        "length": null,
+        "certainty": "inferred"
+      },
+      {
+        "id": "E1",
+        "a": "N1",
+        "b": "N2",
+        "traversals": 2,
+        "length": null,
+        "certainty": "inferred"
+      },
+      {
+        "id": "E2",
+        "a": "N1",
+        "b": "N3",
+        "traversals": 1,
+        "length": null,
+        "certainty": "inferred"
+      },
+      {
+        "id": "E3",
+        "a": "N3",
+        "b": "N4",
+        "traversals": 1,
+        "length": null,
+        "certainty": "inferred"
+      }
+    ],
+    "currentNode": "N4",
+    "heading": 0,
+    "pending": null,
+    "observations": [
+      {
+        "index": 1,
+        "node": "N1",
+        "turn": "L",
+        "heading": 3,
+        "time": 1791128271.4615188
+      },
+      {
+        "index": 2,
+        "node": "N2",
+        "turn": "B",
+        "heading": 1,
+        "time": 1791128271.4615605
+      },
+      {
+        "index": 3,
+        "node": "N1",
+        "turn": "L",
+        "heading": 0,
+        "time": 1791128271.461603
+      },
+      {
+        "index": 4,
+        "node": "N3",
+        "turn": "F",
+        "heading": 0,
+        "time": 1791128271.461642
+      }
+    ],
+    "warnings": [
+      "DEMO: synthetic turn reports. No real robot measurements.",
+      "Partial explored topology only. Corridor lengths and physical position are unknown.",
+      "Layout assumes successful 90\u00b0 turns and a tree maze. Loops and missed junctions cannot be resolved automatically."
+    ],
+    "positionMeasured": false,
+    "distanceMeasured": false
+  }
+]

@@ -1,0 +1,10 @@
+frontend/node_modules/
+frontend/.next/
+frontend/*.tsbuildinfo
+**/__pycache__/
+.pytest_cache/
+serial-bridge/.venv/
+tests/.compiled/
+.env
+paths/*.txt
+recordings/*.json

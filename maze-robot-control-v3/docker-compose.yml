@@ -1,0 +1,31 @@
+name: maze-robot-v3
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "127.0.0.1:8003:8000"
+    environment:
+      DATA_DIR: /data
+      WORKSHOP_FIRMWARE: /firmware/workshop_robot/workshop_robot.ino
+      WORKSHOP_ASSETS: /app/workshop
+    volumes:
+      - ./firmware:/firmware:ro
+      - ./workshop:/app/workshop:ro
+      - ./workshop/data:/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/workshop/setup')"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://127.0.0.1:8003
+    ports:
+      - "127.0.0.1:3003:3000"
+    depends_on:
+      backend:
+        condition: service_healthy

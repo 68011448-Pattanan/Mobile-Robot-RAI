@@ -1,0 +1,208 @@
+### Page
+- Page URL: http://localhost:3003/
+- Page Title: Maze Robot v3 | Day 2 Workshop
+### Snapshot
+```yaml
+- generic [active] [ref=f4e1]:
+  - generic [ref=f4e2]:
+    - complementary [ref=f4e3]:
+      - generic [ref=f4e9]:
+        - text: MAZE ROBOT
+        - generic [ref=f4e10]: CONTROL CENTER
+      - navigation [ref=f4e11]:
+        - button "Day 2 workshop" [ref=f4e12] [cursor=pointer]
+        - button "Dashboard" [ref=f4e15] [cursor=pointer]
+        - button "Live discovery" [ref=f4e18] [cursor=pointer]
+        - button "Maze workspace" [ref=f4e25] [cursor=pointer]
+        - button "Maze solver" [ref=f4e28] [cursor=pointer]
+        - button "PID lab" [ref=f4e33] [cursor=pointer]
+        - button "Calibration" [ref=f4e36] [cursor=pointer]
+        - button "Path analyzer" [ref=f4e40] [cursor=pointer]
+        - button "Real robot" [ref=f4e45] [cursor=pointer]
+        - button "Serial monitor" [ref=f4e52] [cursor=pointer]
+        - button "Recordings" [ref=f4e56] [cursor=pointer]
+        - button "How it works" [ref=f4e60] [cursor=pointer]
+        - button "Firmware" [ref=f4e63] [cursor=pointer]
+        - button "Settings" [ref=f4e68] [cursor=pointer]
+      - generic [ref=f4e72]:
+        - text: BACKEND ONLINE
+        - paragraph [ref=f4e73]: Arduino Uno · MCP30088 sensors · differential drive
+    - main [ref=f4e74]:
+      - generic [ref=f4e75]:
+        - generic [ref=f4e76]:
+          - heading "Day 2 workshop" [level=1] [ref=f4e77]
+          - generic [ref=f4e78]: Learning maze · two dead ends
+        - generic [ref=f4e79]:
+          - generic [ref=f4e80]:
+            - button "Simulation" [ref=f4e81] [cursor=pointer]
+            - button "Real robot" [ref=f4e84] [cursor=pointer]
+          - button "EMERGENCY STOP" [ref=f4e91] [cursor=pointer]
+      - generic [ref=f4e96]:
+        - generic [ref=f4e97]:
+          - generic [ref=f4e98]:
+            - heading "Day 2 · Arduino to simulation to the real field" [level=2] [ref=f4e99]
+            - generic [ref=f4e100]: VERSION 3 · 180 MINUTES
+          - paragraph [ref=f4e101]: Continue Day 1 line following. Complete the two exercises in your Arduino sketch, watch your robot, then test the same code on the real field.
+          - group [ref=f4e102]:
+            - generic "180-minute workshop agenda" [ref=f4e103] [cursor=pointer]
+        - generic [ref=f4e104]:
+          - heading "1. Connect Arduino and computer by Bluetooth" [level=2] [ref=f4e105]
+          - paragraph [ref=f4e106]: Arduino sends newline-delimited telemetry to the HC-05. Bluetooth Classic SPP exposes a Windows COM port. The host serial bridge forwards commands and telemetry between that port and this app.
+          - paragraph [ref=f4e107]: HC-05 TXD → Uno D9; Uno D10 → voltage divider → HC-05 RXD; connect common ground. Pair the module and select its outgoing COM port. USB is used to flash the sketch; Bluetooth is used for the field run.
+          - generic [ref=f4e108]: python serial-bridge/serial_bridge.py --port COM6 --transport Bluetooth --baud 9600
+          - paragraph [ref=f4e109]: "Change COM6 to your port. Connection: No robot connected. The Day 1 PD controller and sensor calibration are supplied."
+        - generic [ref=f4e110]:
+          - generic [ref=f4e111]:
+            - heading "2. Complete your Arduino exercises" [level=2] [ref=f4e112]
+            - button "Reload saved .ino" [ref=f4e113] [cursor=pointer]
+          - paragraph [ref=f4e114]:
+            - text: Edit
+            - code [ref=f4e115]: firmware/workshop_robot/workshop_robot.ino
+            - text: in Arduino IDE and reload it here, or edit the exercise block below and download your sketch. Only this block is editable for the workshop.
+          - paragraph [ref=f4e116]:
+            - text: "Motor values: F = forward, L = left pivot, R = right pivot, B = clockwise U-turn. Return left and right wheel commands using"
+            - code [ref=f4e117]: speed
+            - text: and
+            - code [ref=f4e118]: "-speed"
+            - text: ". LSRB: choose Left → Straight (F) → Right → Back from the available branches."
+          - generic [ref=f4e119]:
+            - text: Student C++ exercise block
+            - textbox "Student Arduino exercises" [ref=f4e120]: "// Instructor answer for the marked exercise block; do not distribute initially. MotorPair studentMotors(char movement, int speed) { if (movement == 'F') return {speed, speed}; if (movement == 'L') return {-speed, speed}; if (movement == 'R') return {speed, -speed}; if (movement == 'B') return {speed, -speed}; return {0, 0}; } char studentChoose(bool left, bool straight, bool right) { if (left) return 'L'; if (straight) return 'F'; if (right) return 'R'; return 'B'; }"
+          - generic [ref=f4e121]:
+            - button "Compile exercises" [ref=f4e122] [cursor=pointer]
+            - button "Download current sketch" [ref=f4e123] [cursor=pointer]
+            - generic [ref=f4e124]:
+              - text: Load edited .ino
+              - button "Load student ino" [ref=f4e125]
+          - generic [ref=f4e196]: "LSRB branch checks: PASS · Motor checks: F: PASS · L: PASS · R: PASS · B: PASS"
+          - table [ref=f4e198]:
+            - rowgroup [ref=f4e199]:
+              - row [ref=f4e200]:
+                - columnheader "Left" [ref=f4e201]
+                - columnheader "Straight" [ref=f4e202]
+                - columnheader "Right" [ref=f4e203]
+                - columnheader "Your choice" [ref=f4e204]
+            - rowgroup [ref=f4e205]:
+              - row [ref=f4e206]:
+                - cell "No" [ref=f4e207]
+                - cell "No" [ref=f4e208]
+                - cell "No" [ref=f4e209]
+                - cell "B" [ref=f4e210]
+              - row [ref=f4e211]:
+                - cell "No" [ref=f4e212]
+                - cell "No" [ref=f4e213]
+                - cell "Yes" [ref=f4e214]
+                - cell "R" [ref=f4e215]
+              - row [ref=f4e216]:
+                - cell "No" [ref=f4e217]
+                - cell "Yes" [ref=f4e218]
+                - cell "No" [ref=f4e219]
+                - cell "F" [ref=f4e220]
+              - row [ref=f4e221]:
+                - cell "No" [ref=f4e222]
+                - cell "Yes" [ref=f4e223]
+                - cell "Yes" [ref=f4e224]
+                - cell "F" [ref=f4e225]
+              - row [ref=f4e226]:
+                - cell "Yes" [ref=f4e227]
+                - cell "No" [ref=f4e228]
+                - cell "No" [ref=f4e229]
+                - cell "L" [ref=f4e230]
+              - row [ref=f4e231]:
+                - cell "Yes" [ref=f4e232]
+                - cell "No" [ref=f4e233]
+                - cell "Yes" [ref=f4e234]
+                - cell "L" [ref=f4e235]
+              - row [ref=f4e236]:
+                - cell "Yes" [ref=f4e237]
+                - cell "Yes" [ref=f4e238]
+                - cell "No" [ref=f4e239]
+                - cell "L" [ref=f4e240]
+              - row [ref=f4e241]:
+                - cell "Yes" [ref=f4e242]
+                - cell "Yes" [ref=f4e243]
+                - cell "Yes" [ref=f4e244]
+                - cell "L" [ref=f4e245]
+        - generic [ref=f4e126]:
+          - heading "3. Check the shared field and observe the simulation" [level=2] [ref=f4e127]
+          - paragraph [ref=f4e128]: "This field is generated from one maze definition. Print at actual size: 700 × 520 mm; line 14 mm; start heading 0°. The black finish rectangle belongs to the real field."
+          - generic [ref=f4e129]:
+            - button "Download physical field SVG" [ref=f4e130] [cursor=pointer]
+            - button "Download maze JSON" [ref=f4e131] [cursor=pointer]
+          - generic [ref=f4e132]:
+            - checkbox "Instructor confirms the real field matches this layout, dimensions, line width, start heading and finish marker." [checked] [ref=f4e133]
+            - text: Instructor confirms the real field matches this layout, dimensions, line width, start heading and finish marker.
+          - generic [ref=f4e134]:
+            - button "Run student simulation" [ref=f4e135] [cursor=pointer]
+            - button "Play animation" [ref=f4e262] [cursor=pointer]
+            - button "Step" [ref=f4e137] [cursor=pointer]
+            - combobox "Workshop animation speed" [ref=f4e138]:
+              - option "1×"
+              - option "2×" [selected]
+              - option "4×"
+              - option "8×"
+          - img "Workshop robot simulation" [ref=f4e173]:
+            - generic [ref=f4e175]: START
+            - generic [ref=f4e178]: A
+            - generic [ref=f4e181]: D
+            - generic [ref=f4e184]: B
+            - generic [ref=f4e187]: E
+            - generic [ref=f4e190]: FINISH
+          - slider "Workshop simulation frame" [ref=f4e247]: "61"
+          - generic [ref=f4e248]:
+            - generic [ref=f4e249]:
+              - text: Stage
+              - generic [ref=f4e250]: Replay
+              - text: PATH_READY
+            - generic [ref=f4e251]:
+              - text: Simulation time
+              - generic [ref=f4e252]: 4.5 s
+            - generic [ref=f4e253]:
+              - text: Left / right motor
+              - generic [ref=f4e254]: 0 / 0
+            - generic [ref=f4e255]:
+              - text: Position error
+              - generic [ref=f4e256]: "-3500"
+          - paragraph [ref=f4e257]: "Sensor ADC: 100 · 100 · 100 · 100 · 100 · 100 · 100 · 100Raw path: — · Reduced path: FF"
+          - generic [ref=f4e258]: PASS · Learning and reduced-path replay reached the finish.
+          - group [ref=f4e259]:
+            - generic "Robot decision timeline" [ref=f4e260] [cursor=pointer]
+        - generic [ref=f4e139]:
+          - heading "4. Transfer and test on the real field" [level=2] [ref=f4e140]
+          - paragraph [ref=f4e141]: After passing, download the verified Arduino sketch. It contains your student functions and the reduced path. In Arduino IDE use an Arduino Uno and install Adafruit MCP3008 with Adafruit BusIO, then flash the sketch. Motors stay stopped at startup.
+          - generic [ref=f4e142]:
+            - button "Export passed Arduino sketch + path" [ref=f4e143] [cursor=pointer]
+            - button "Download passed path TXT" [ref=f4e144] [cursor=pointer]
+            - button "Upload passed path over Bluetooth / USB" [disabled] [ref=f4e145]
+          - paragraph [ref=f4e146]: Path upload requires that this verified student sketch has already been flashed. Uploading path data does not replace firmware. Place the robot at START facing East; calibrate and check wheel direction with the instructor before testing.
+          - generic [ref=f4e147]:
+            - checkbox "Arm physical motion after the instructor's motor and sensor checks." [disabled] [ref=f4e148]
+            - text: Arm physical motion after the instructor's motor and sensor checks.
+          - generic [ref=f4e149]:
+            - button "Run passed path on real robot" [disabled] [ref=f4e150]
+            - button "Test student LSRB on real robot" [disabled] [ref=f4e151]
+            - button "Stop real robot" [disabled] [ref=f4e152]
+        - generic [ref=f4e153]:
+          - heading "5. First group to pass the physical test wins" [level=2] [ref=f4e154]
+          - paragraph [ref=f4e155]: The instructor records each finish after observing the real robot reach the field's finish without assistance. Simulation completion alone does not win.
+          - generic [ref=f4e157]:
+            - text: Group name
+            - textbox "Workshop group name" [ref=f4e158]
+          - generic [ref=f4e159]:
+            - checkbox "Instructor confirms this group completed the real field without touching or repositioning the robot." [ref=f4e160]
+            - text: Instructor confirms this group completed the real field without touching or repositioning the robot.
+          - generic [ref=f4e161]:
+            - button "Record confirmed finish" [disabled] [ref=f4e162]
+            - button "Refresh results" [ref=f4e163] [cursor=pointer]
+          - table [ref=f4e164]:
+            - rowgroup [ref=f4e165]:
+              - row [ref=f4e166]:
+                - columnheader "Place" [ref=f4e167]
+                - columnheader "Group" [ref=f4e168]
+                - columnheader "Confirmed finish" [ref=f4e169]
+                - columnheader "Path" [ref=f4e170]
+            - rowgroup
+        - status [ref=f4e261] [cursor=pointer]: Simulation passed. Replay or export the verified sketch and path.
+      - generic [ref=f4e171]: Maze Robot Control Center v3 · Simulation · Local data stays on your computer
+  - alert [ref=f4e172]
+```

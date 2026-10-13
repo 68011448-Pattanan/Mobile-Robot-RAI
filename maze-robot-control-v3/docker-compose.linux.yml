@@ -1,0 +1,10 @@
+# Optional Linux native serial transport; Windows uses the host-side bridge instead.
+services:
+  serial-bridge:
+    build: ./serial-bridge
+    devices:
+      - "${ROBOT_DEVICE:-/dev/ttyACM0}:/dev/robot"
+    command: ["--port", "/dev/robot", "--baud", "${ROBOT_BAUD:-115200}", "--transport", "${ROBOT_TRANSPORT:-USB}", "--url", "ws://backend:8000/bridge"]
+    depends_on:
+      backend:
+        condition: service_healthy

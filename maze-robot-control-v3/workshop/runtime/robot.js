@@ -1,0 +1,279 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Simulator = exports.physicsDefault = exports.distance = exports.clamp = exports.angles = exports.defaults = void 0;
+exports.optimize = optimize;
+exports.validPath = validPath;
+exports.pointSegment = pointSegment;
+exports.degree = degree;
+exports.makeMaze = makeMaze;
+exports.generated = generated;
+exports.graphTrace = graphTrace;
+const defaults = () => ({ mode: 'IDLE', sensors: Array(8).fill(100), normalized: Array(8).fill(0), position: 3500, error: 0, kp: .01, ki: 0, kd: .08, p: 0, i: 0, d: 0, correction: 0, leftMotor: 0, rightMotor: 0, rawPath: '', optimizedPath: '', pathIndex: 0, lastIntersection: '', runtime: 0, minimum: Array(8).fill(100), maximum: Array(8).fill(800), threshold: 450, controller: 'PD', telemetryHz: 5, background: 0 });
+exports.defaults = defaults;
+exports.angles = { L: -90, F: 0, R: 90, B: 180 };
+function optimize(path) { let result = ''; const steps = []; for (const char of path) {
+    result += char;
+    while (result.length >= 3 && result.at(-2) === 'B' && 'LFR'.includes(result.at(-3)) && 'LFR'.includes(result.at(-1))) {
+        const before = result, rule = result.slice(-3);
+        const angle = ((exports.angles[rule[0]] + 180 + exports.angles[rule[2]]) % 360 + 360) % 360;
+        const replacement = { 0: 'F', 90: 'R', 180: 'B', 270: 'L' }[angle];
+        result = result.slice(0, -3) + replacement;
+        steps.push({ before, rule, after: result, replacement, angle });
+    }
+} return { path: result, steps }; }
+function validPath(text) { const p = text.split('\n').filter(l => !l.trim().startsWith('#')).join('').replace(/\s/g, ''); if (!/^[LFRB]{1,100}$/.test(p))
+    throw Error('Use 1–100 L/F/R/B instructions.'); return p; }
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+exports.clamp = clamp;
+const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+exports.distance = distance;
+function pointSegment(p, a, b) { const dx = b.x - a.x, dy = b.y - a.y; const t = (0, exports.clamp)(((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1), 0, 1); return (0, exports.distance)(p, { x: a.x + t * dx, y: a.y + t * dy }); }
+function degree(m, id) { return m.graph.edges.filter(e => e.a === id || e.b === id).length; }
+function makeMaze() { const nodes = [{ id: 'S', x: 80, y: 280 }, { id: 'A', x: 230, y: 280 }, { id: 'D', x: 230, y: 120 }, { id: 'B', x: 400, y: 280 }, { id: 'E', x: 400, y: 430 }, { id: 'F', x: 620, y: 280 }]; const pairs = [['S', 'A'], ['A', 'D'], ['A', 'B'], ['B', 'E'], ['B', 'F']]; return { id: 'demo-tree', name: 'Learning maze · two dead ends', width: 700, height: 520, lineWidth: 14, scale: 1, heading: 0, start: 'S', finish: 'F', graph: { nodes, edges: pairs.map(([a, b], i) => ({ id: String(i), a, b, points: [nodes.find(n => n.id === a), nodes.find(n => n.id === b)] })) }, sourceType: 'example', warnings: [], verified: true }; }
+function generated(seed, size) { let r = seed >>> 0; const rand = () => { r = (r * 1664525 + 1013904223) >>> 0; return r / 4294967296; }; const m = makeMaze(); m.graph = { nodes: [], edges: [] }; m.id = 'generated-' + seed; m.name = 'Generated tree ' + seed; const seen = new Set(); const at = (x, y) => `${x}:${y}`; function walk(x, y) { const id = at(x, y); seen.add(id); m.graph.nodes.push({ id, x: 50 + x * 100, y: 50 + y * 100 }); const dirs = [[1, 0], [-1, 0], [0, 1], [0, -1]].sort(() => rand() - .5); for (const [dx, dy] of dirs) {
+    const nx = x + dx, ny = y + dy, nid = at(nx, ny);
+    if (nx < 0 || ny < 0 || nx >= size || ny >= size || seen.has(nid))
+        continue;
+    walk(nx, ny);
+    m.graph.edges.push({ id: String(m.graph.edges.length), a: id, b: nid, points: [{ x: 50 + x * 100, y: 50 + y * 100 }, { x: 50 + nx * 100, y: 50 + ny * 100 }] });
+} } walk(0, 0); m.start = '0:0'; m.finish = at(size - 1, size - 1); m.width = m.height = size * 100; m.heading = 90; return m; }
+function graphTrace(m, replay) { let current = m.start, heading = m.heading * Math.PI / 180, raw = '', distanceSum = 0; const timeline = []; const visits = new Set(); const nodes = Object.fromEntries(m.graph.nodes.map(n => [n.id, n])); let route = [nodes[current]]; for (let step = 0; step < 500; step++) {
+    if (current === m.finish)
+        return { raw, optimized: optimize(raw).path, timeline, route, distance: distanceSum, complete: true };
+    const choices = m.graph.edges.filter(e => e.a === current || e.b === current).map(e => { const points = e.a === current ? e.points : [...e.points].reverse(); const a = points[0], b = points[Math.min(1, points.length - 1)]; let delta = (Math.atan2(b.y - a.y, b.x - a.x) - heading) * 180 / Math.PI; delta = ((delta + 540) % 360) - 180; const turn = Math.abs(delta) < 45 ? 'F' : Math.abs(delta) > 135 ? 'B' : delta < 0 ? 'L' : 'R'; return { e, points, turn, delta }; });
+    const transit = step === 0 && choices.length === 1;
+    const desired = transit ? undefined : replay?.[raw.length];
+    let choice = desired ? choices.find(c => c.turn === desired) : ['L', 'F', 'R', 'B'].map(t => choices.find(c => c.turn === t)).find(Boolean);
+    if (!choice)
+        return { raw, optimized: optimize(raw).path, timeline, route, distance: distanceSum, complete: false, error: 'No edge matches instruction ' + desired };
+    const key = current + ':' + Math.round(heading * 180 / Math.PI);
+    if (!replay && visits.has(key))
+        return { raw, optimized: optimize(raw).path, timeline, route, distance: distanceSum, complete: false, error: 'LSRB cycle detected' };
+    visits.add(key);
+    if (!transit)
+        raw += choice.turn;
+    timeline.push({ node: current, available: choices.map(c => c.turn).join(' '), selected: choice.turn, reason: 'L → F → R → B priority' });
+    for (let i = 1; i < choice.points.length; i++)
+        distanceSum += (0, exports.distance)(choice.points[i - 1], choice.points[i]) * m.scale;
+    route.push(...choice.points.slice(1));
+    const ps = choice.points;
+    heading = Math.atan2(ps.at(-1).y - ps.at(-2).y, ps.at(-1).x - ps.at(-2).x);
+    current = choice.e.a === current ? choice.e.b : choice.e.a;
+} return { raw, optimized: optimize(raw).path, timeline, route, distance: distanceSum, complete: false, error: 'Run exceeded 500 decisions' }; }
+exports.physicsDefault = { wheelbase: 80, sensorSpacing: 6, sensorOffset: 24, robotWidth: 90, robotLength: 110, noise: 0, maxVelocity: 400, motorTau: .05, turnRadius: 0 };
+class Simulator {
+    maze;
+    workshopProfile;
+    workshopMotors(turn, speed) { return this.workshopProfile?.motors[turn]?.[Math.round((0, exports.clamp)(speed, 0, 100))] || [speed, speed]; }
+    state = (0, exports.defaults)();
+    pose = { x: 0, y: 0, theta: 0 };
+    trail = [];
+    sensors = [];
+    events = [];
+    config = exports.physicsDefault;
+    speed = 30;
+    integral = 0;
+    lastError = 0;
+    lastPosition = 0;
+    vL = 0;
+    vR = 0;
+    phase = 'follow';
+    phaseDistance = 0;
+    turnStart = 0;
+    turnTarget = 0;
+    turnElapsed = 0;
+    cooldown = 0;
+    clock = 0;
+    pausedMode = 'SCAN';
+    lastEventNode = '';
+    constructor(maze) {
+        this.maze = maze;
+        this.reset();
+    }
+    reset() { const old = this.state; this.state = { ...(0, exports.defaults)(), kp: old.kp, ki: old.ki, kd: old.kd, minimum: [...old.minimum], maximum: [...old.maximum], controller: old.controller, threshold: old.threshold, background: old.background, optimizedPath: old.optimizedPath }; const n = this.maze.graph.nodes.find(n => n.id === this.maze.start); this.pose = { x: n.x, y: n.y, theta: this.maze.heading * Math.PI / 180 }; this.trail = []; this.events = []; this.phase = 'follow'; this.phaseDistance = this.turnStart = this.turnTarget = this.turnElapsed = 0; this.pausedMode = 'IDLE'; this.integral = this.lastError = this.lastPosition = this.clock = this.cooldown = 0; this.vL = this.vR = 0; this.sense(); }
+    log(text) { this.events.push({ time: this.clock, text }); this.state.lastIntersection = text; }
+    lineAt(p) { let d = Infinity; for (const e of this.maze.graph.edges)
+        for (let i = 1; i < e.points.length; i++)
+            d = Math.min(d, pointSegment(p, e.points[i - 1], e.points[i])); return (0, exports.clamp)((this.maze.lineWidth / 2 + 2 - d) / 4, 0, 1); }
+    sense() { this.state.sensors = Array(8).fill(0); const { x, y, theta } = this.pose; const scale = this.maze.scale || 1; this.sensors = Array.from({ length: 8 }, (_, i) => { const lateral = (i - 3.5) * this.config.sensorSpacing / scale; return { x: x + Math.cos(theta) * this.config.sensorOffset / scale - Math.sin(theta) * lateral, y: y + Math.sin(theta) * this.config.sensorOffset / scale + Math.cos(theta) * lateral }; }); const norm = this.sensors.map((p, i) => { const light = this.lineAt(p); const raw = (0, exports.clamp)(Math.round(100 + 700 * (this.state.background ? 1 - light : light) + (Math.random() - .5) * this.config.noise), 0, 1023); this.state.sensors[i] = raw; const val = (0, exports.clamp)((raw - this.state.minimum[i]) * 1000 / Math.max(1, this.state.maximum[i] - this.state.minimum[i]), 0, 1000); return this.state.background ? 1000 - val : val; }); this.state.normalized = norm; let sum = 0, avg = 0; norm.forEach((v, i) => { if (v > 50) {
+        sum += v;
+        avg += v * i * 1000;
+    } }); this.state.position = norm.some(v => v > 200) ? avg / sum : this.lastPosition < 3500 ? 0 : 7000; if (norm.some(v => v > 200))
+        this.lastPosition = this.state.position; this.state.error = this.state.position - 3500; }
+    start(mode) { this.reset(); this.state.mode = mode; this.log(mode === 'SCAN' ? 'Learning run started' : 'Optimized run started'); }
+    pause() { if (!['SCAN', 'RUN_PATH', 'MANUAL'].includes(this.state.mode))
+        return; this.pausedMode = this.state.mode; this.state.mode = 'PAUSED'; this.state.leftMotor = this.state.rightMotor = 0; this.vL = this.vR = 0; }
+    resume() { if (this.state.mode === 'PAUSED')
+        this.state.mode = this.pausedMode; }
+    stop() { this.state.mode = 'STOPPED'; this.state.leftMotor = this.state.rightMotor = 0; this.vL = this.vR = 0; }
+    finish() { this.state.optimizedPath = optimize(this.state.rawPath).path; this.state.mode = 'PATH_READY'; this.state.leftMotor = this.state.rightMotor = 0; this.log('Finish detected'); }
+    // Direction availability is measured against line geometry around the robot pose;
+    // no graph-node target or graph steering is used by the physical integrator.
+    directions() { const scale = this.maze.scale || 1, r = Math.max(this.config.sensorOffset, 20) / scale; const dirs = {}; for (const t of ['L', 'F', 'R']) {
+        const theta = this.pose.theta + exports.angles[t] * Math.PI / 180;
+        let best = 0;
+        for (const lateral of [-this.maze.lineWidth / 3, 0, this.maze.lineWidth / 3])
+            best = Math.max(best, this.lineAt({ x: this.pose.x + Math.cos(theta) * r - Math.sin(theta) * lateral, y: this.pose.y + Math.sin(theta) * r + Math.cos(theta) * lateral }));
+        dirs[t] = best > .5;
+    } return dirs; }
+    decide() { const available = this.directions(); let dir = 'B'; if (this.state.mode === 'RUN_PATH') {
+        dir = this.state.optimizedPath[this.state.pathIndex];
+        if (!dir) {
+            this.stop();
+            this.log('Replay exhausted before finish');
+            return;
+        }
+        this.state.pathIndex++;
+        if (dir !== 'B' && !available[dir]) {
+            this.stop();
+            this.log('Instruction does not match sensed junction');
+            return;
+        }
+    }
+    else {
+        dir = this.workshopProfile ? this.workshopProfile.choices[(available.L ? 4 : 0) + (available.F ? 2 : 0) + (available.R ? 1 : 0)] : ['L', 'F', 'R'].find(t => available[t]) || 'B';
+        if (!'LFRB'.includes(dir) || dir.length !== 1) {
+            this.stop();
+            this.state.mode = 'ERROR';
+            this.log('Student LSRB function must return L, F, R or B');
+            return;
+        }
+        if (dir !== 'B' && !available[dir]) {
+            this.stop();
+            this.state.mode = 'ERROR';
+            this.log('Student LSRB selected a branch that is unavailable');
+            return;
+        }
+        if (this.state.rawPath.length >= 100) {
+            this.stop();
+            this.state.mode = 'ERROR';
+            this.log('Path overflow');
+            return;
+        }
+        this.state.rawPath += dir;
+    } this.log(`Junction: ${Object.entries(available).filter(([, v]) => v).map(([k]) => k).join(' ')} → ${dir}`); if (dir === 'F') {
+        this.phase = 'follow';
+        this.cooldown = 35;
+    }
+    else {
+        this.phase = 'turn';
+        this.turnStart = this.pose.theta;
+        this.turnTarget = exports.angles[dir] * Math.PI / 180;
+        this.turnElapsed = 0;
+    } }
+    tick(dt = .01, force = false) {
+        if (this.state.mode === 'PAUSED' && force)
+            this.state.mode = this.pausedMode;
+        if (!['SCAN', 'RUN_PATH', 'MANUAL'].includes(this.state.mode)) {
+            this.sense();
+            return;
+        }
+        this.clock += dt;
+        this.state.runtime = this.clock * 1000;
+        this.sense();
+        const s = this.state;
+        const finish = this.maze.graph.nodes.find(n => n.id === this.maze.finish);
+        if (s.mode !== 'MANUAL' && finish && (0, exports.distance)(this.pose, finish) * this.maze.scale < 8 && this.clock > .2) {
+            if (s.mode === 'RUN_PATH') {
+                s.mode = 'PATH_READY';
+                s.leftMotor = s.rightMotor = 0;
+                this.log('Optimized replay finished');
+            }
+            else
+                this.finish();
+            return;
+        }
+        let l = s.leftMotor, r = s.rightMotor;
+        if (s.mode !== 'MANUAL') {
+            if (this.phase === 'turn') {
+                this.turnElapsed += dt;
+                const amount = this.pose.theta - this.turnStart;
+                const reached = this.workshopProfile ? (this.turnTarget < 0 ? amount <= this.turnTarget + .03 : amount >= this.turnTarget - .03) : Math.abs(amount) >= Math.abs(this.turnTarget) - .03;
+                if (reached) {
+                    this.phase = 'follow';
+                    this.cooldown = 30;
+                    this.lastError = 0;
+                }
+                else if (this.turnElapsed > 8) {
+                    this.stop();
+                    s.mode = 'ERROR';
+                    this.log('Turn timeout: check student motor directions');
+                    return;
+                }
+                else {
+                    const sign = Math.sign(this.turnTarget);
+                    if (this.workshopProfile) {
+                        [l, r] = this.workshopMotors(Math.abs(this.turnTarget) > 2 ? 'B' : sign < 0 ? 'L' : 'R', 25);
+                    }
+                    else {
+                        l = sign * 25;
+                        r = -sign * 25;
+                    }
+                }
+            }
+            if (this.phase === 'probe') {
+                if (this.workshopProfile) {
+                    [l, r] = this.workshopMotors('F', this.speed);
+                }
+                else {
+                    l = r = this.speed;
+                }
+                if (this.phaseDistance >= this.config.sensorOffset) {
+                    this.phaseDistance = 0;
+                    this.decide();
+                }
+            }
+            if (this.phase === 'follow') {
+                const n = s.normalized;
+                const black = s.sensors.map(v => s.background ? v < s.threshold : v > s.threshold);
+                const side = (black[0] && black[1]) || (black[6] && black[7]);
+                const lost = black.slice(2, 6).every(v => !v);
+                if (this.cooldown <= 0 && (side || lost)) {
+                    this.phase = 'probe';
+                    this.phaseDistance = 0;
+                    if (this.workshopProfile) {
+                        [l, r] = this.workshopMotors('F', this.speed);
+                    }
+                    else {
+                        l = r = this.speed;
+                    }
+                }
+                else {
+                    s.p = s.kp * s.error;
+                    const proposed = (0, exports.clamp)(this.integral + s.error, -20000, 20000);
+                    s.i = s.controller.includes('I') ? s.ki * proposed : 0;
+                    s.d = s.controller.includes('D') ? s.kd * (s.error - this.lastError) : 0;
+                    s.correction = s.p + s.i + s.d;
+                    if (Math.abs(s.correction) < 100 - this.speed)
+                        this.integral = proposed;
+                    this.lastError = s.error;
+                    const forward = this.workshopProfile ? this.workshopMotors('F', this.speed) : [this.speed, this.speed];
+                    l = (0, exports.clamp)(forward[0] + s.correction, -100, 100);
+                    r = (0, exports.clamp)(forward[1] - s.correction, -100, 100);
+                }
+            }
+        }
+        s.leftMotor = l;
+        s.rightMotor = r;
+        const alpha = 1 - Math.exp(-dt / Math.max(.001, this.config.motorTau));
+        this.vL += (l / 100 * this.config.maxVelocity - this.vL) * alpha;
+        this.vR += (r / 100 * this.config.maxVelocity - this.vR) * alpha;
+        const v = (this.vL + this.vR) / 2;
+        const moved = Math.abs(v) * dt;
+        this.pose.theta += (this.vL - this.vR) / Math.max(1, this.config.wheelbase) * dt;
+        this.pose.x += v * Math.cos(this.pose.theta) * dt / this.maze.scale;
+        this.pose.y += v * Math.sin(this.pose.theta) * dt / this.maze.scale;
+        this.phaseDistance += moved;
+        this.cooldown -= moved;
+        if (this.trail.length === 0 || (0, exports.distance)(this.pose, this.trail.at(-1)) > 2)
+            this.trail.push({ x: this.pose.x, y: this.pose.y });
+        if (this.trail.length > 10000)
+            this.trail.shift();
+        if (this.clock > 600) {
+            this.stop();
+            s.mode = 'ERROR';
+            this.log('600 second simulation limit');
+        }
+    }
+}
+exports.Simulator = Simulator;

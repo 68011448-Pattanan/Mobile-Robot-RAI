@@ -1,0 +1,160 @@
+[
+  {
+    "case": "00_complete",
+    "compiled": true,
+    "lsrbChecks": true,
+    "motorChecks": {
+      "F": true,
+      "L": true,
+      "R": true,
+      "B": true
+    },
+    "learningFinished": true,
+    "replayFinished": true,
+    "raw": "LBLF",
+    "reduced": "FF",
+    "reason": "Learning and reduced-path replay reached the finish.",
+    "eligibleWithFieldConfirmation": true
+  },
+  {
+    "case": "01_blank",
+    "compiled": true,
+    "lsrbChecks": false,
+    "motorChecks": {
+      "F": false,
+      "L": false,
+      "R": false,
+      "B": false
+    },
+    "learningFinished": false,
+    "replayFinished": false,
+    "raw": "",
+    "reduced": "",
+    "reason": "600 second simulation limit",
+    "eligibleWithFieldConfirmation": false
+  },
+  {
+    "case": "02_motors_only",
+    "compiled": true,
+    "lsrbChecks": false,
+    "motorChecks": {
+      "F": true,
+      "L": true,
+      "R": true,
+      "B": true
+    },
+    "learningFinished": false,
+    "replayFinished": false,
+    "raw": "",
+    "reduced": "",
+    "reason": "Student LSRB function must return L, F, R or B",
+    "eligibleWithFieldConfirmation": false
+  },
+  {
+    "case": "03_lsrb_only",
+    "compiled": true,
+    "lsrbChecks": true,
+    "motorChecks": {
+      "F": false,
+      "L": false,
+      "R": false,
+      "B": false
+    },
+    "learningFinished": false,
+    "replayFinished": false,
+    "raw": "",
+    "reduced": "",
+    "reason": "600 second simulation limit",
+    "eligibleWithFieldConfirmation": false
+  },
+  {
+    "case": "04_missing_left_motor",
+    "compiled": true,
+    "lsrbChecks": true,
+    "motorChecks": {
+      "F": true,
+      "L": false,
+      "R": true,
+      "B": true
+    },
+    "learningFinished": false,
+    "replayFinished": false,
+    "raw": "L",
+    "reduced": "",
+    "reason": "Turn timeout: check student motor directions",
+    "eligibleWithFieldConfirmation": false
+  },
+  {
+    "case": "05_missing_back_logic",
+    "compiled": true,
+    "lsrbChecks": false,
+    "motorChecks": {
+      "F": true,
+      "L": true,
+      "R": true,
+      "B": true
+    },
+    "learningFinished": false,
+    "replayFinished": false,
+    "raw": "L",
+    "reduced": "",
+    "reason": "Student LSRB function must return L, F, R or B",
+    "eligibleWithFieldConfirmation": false
+  },
+  {
+    "case": "06_missing_right_logic",
+    "compiled": true,
+    "lsrbChecks": false,
+    "motorChecks": {
+      "F": true,
+      "L": true,
+      "R": true,
+      "B": true
+    },
+    "learningFinished": true,
+    "replayFinished": true,
+    "raw": "LBLF",
+    "reduced": "FF",
+    "reason": "Learning and reduced-path replay reached the finish.",
+    "eligibleWithFieldConfirmation": false
+  },
+  {
+    "case": "07_wrong_priority",
+    "compiled": true,
+    "lsrbChecks": false,
+    "motorChecks": {
+      "F": true,
+      "L": true,
+      "R": true,
+      "B": true
+    },
+    "learningFinished": true,
+    "replayFinished": true,
+    "raw": "FF",
+    "reduced": "FF",
+    "reason": "Learning and reduced-path replay reached the finish.",
+    "eligibleWithFieldConfirmation": false
+  },
+  {
+    "case": "08_wrong_left_motor",
+    "compiled": true,
+    "lsrbChecks": true,
+    "motorChecks": {
+      "F": true,
+      "L": false,
+      "R": true,
+      "B": true
+    },
+    "learningFinished": false,
+    "replayFinished": false,
+    "raw": "L",
+    "reduced": "",
+    "reason": "Turn timeout: check student motor directions",
+    "eligibleWithFieldConfirmation": false
+  },
+  {
+    "case": "09_syntax_error",
+    "compiled": false,
+    "diagnostic": "workshop_robot.ino: In function \u2018char studentChoose(bool, bool, bool)\u2019:\nworkshop_robot.ino:26:23: error: expected \u2018;\u2019 before \u2018if\u2019\n"
+  }
+]
